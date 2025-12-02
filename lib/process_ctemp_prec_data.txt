@@ -1,0 +1,39 @@
+# ----- climate data extraction ----
+
+# unzip climate data (downloaded multi-annual averages from https://opendata.dwd.de/climate_environment/)
+
+
+# precipitation
+
+# ras_path <- "raw/climate/grids_germany_multi_annual_precipitation_1991-2020_17.asc.gz"
+# 
+# R.utils::gunzip(ras_path, remove = FALSE)
+# 
+# # average temperature
+# 
+# ras_path <- "raw/climate/grids_germany_multi_annual_air_temp_mean_1991_2020_17.asc.gz"
+# 
+# R.utils::gunzip(ras_path, remove = FALSE)
+
+# 
+# prec <- rast("raw/climate/grids_germany_multi_annual_precipitation_1991-2020_17.asc")
+# temp <- rast("raw/climate/grids_germany_multi_annual_air_temp_mean_1991_2020_17.asc")
+
+# # assign crs from documentation of dwd data
+# crs(prec) <- "EPSG:31467"
+# crs(temp) <- "EPSG:31467"
+# 
+# # reproject raster data for climate data extraction
+# 
+# prec <- project(prec, Research_disturbance_stack)
+# temp <- project(temp, Research_disturbance_stack)
+# 
+# writeRaster(prec,"raw/climate/multi_annual_precipitation_1991-2020_17_25832.tiff" )
+# writeRaster(temp,"raw/climate/multi_annual_air_temp_mean_1991_2020_17_25832.tiff" )
+
+
+prec <- rast("data/raw/climate/multi_annual_precipitation_1991-2020_17_25832.tiff")
+temp <- rast("data/raw/climate/multi_annual_air_temp_mean_1991_2020_17_25832.tiff" )
+
+
+(aus dem disturbance extraction script von DisturbanceRegimeManagedUnmanaged project)
