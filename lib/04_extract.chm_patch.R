@@ -247,7 +247,7 @@ process_patches <- function(patch_indices, patches_file, buffers_file, innerbuff
         # define patch id for writing the rasters
         patch_id <- as.numeric(patch[1, ][[1]])
         
-        # outer buffer - mask to buffer area around patch and exclude non-forested and disturbed pixels  
+        # outer buffer - mask to buffer area around patch and exclude non-forested and disturbed pixels  - not used in analysis!
         
         buffer.3035 <- project(buffer, "EPSG:3035")
         
@@ -267,7 +267,7 @@ process_patches <- function(patch_indices, patches_file, buffers_file, innerbuff
         chm_patch <- mask(crop(tiles_patch, patch), patch, touches = F)
         writeRaster(chm_patch,  paste0("03_work/data_processed/CHM/disturbance_patches/patch/", "patch_", patch_id, "_", year, ".tif"), overwrite = TRUE)
         
-        # mask to inner buffer 10 m
+        # mask to inner buffer 10 m # - not used in analysis but can be trialed to retain more disturbed area with the risk of more comission errors in disturbed area !
         
         chm_patch_inner10 <- mask(chm_patch, innerbuffer10)
         if (any(!is.na(values(chm_patch_inner10)))) {
