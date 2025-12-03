@@ -50,6 +50,7 @@ library(cowplot)
 setwd("~/NAS/Projects/ForestRecovery/")
 
 
+
 # -------------------------------
 # load data layer for plotting
 # -------------------------------
@@ -67,6 +68,7 @@ sample_points[, mngt_type := factor(mngt_type,
 obs_points <- st_as_sf(sample_points, coords = c("x", "y"), crs = 25832)
 
 
+
 # --- note: these CHM tiles are not available in this data repository and need to be obtained from the The Bavarian State Institute of Forestry
 #           or from the Bavarian Agency for Digitisation, High-Speed Internet and Surveying
 
@@ -77,6 +79,9 @@ chm_30 = rast("03_work/data_processed/map/CHM_patches/patch_331527_2020_30m_inne
 
 # CHMS - viridis: 1* for ~ 3 years post dist; 1* 15 years post dist ; 1* 30 years post dist
 
+
+
+# -- load background map --
 
 world <- ne_countries(scale = "medium", returnclass = "sf")
 
@@ -109,11 +114,13 @@ overview_p
 
 europe_mainland_utm <- st_transform(europe_mainland, crs = 25832)
 
-#bavaria_wgs <- st_transform(bavaria, crs = 4326)
+
 bbox <- st_bbox(bavaria)
 padding_x <- 0.7 # Add some padding (in degrees)
 padding_y <- 0.7
 
+
+# --- define management colours ---
 
 mngt_colors <- c(
   "State forest" = "#A00E00",
@@ -124,14 +131,18 @@ mngt_colors <- c(
   "Small private"    = "#132B69",
   "Large private" = "#e7298a"
 )
+# ----------------------------------
 
 
 # Get centroids of CHM extents
+
 chm_3_centroid <- st_centroid(st_as_sfc(st_bbox(chm_3)))
 chm_15_centroid <- st_centroid(st_as_sfc(st_bbox(chm_15)))
 chm_30_centroid <- st_centroid(st_as_sfc(st_bbox(chm_30)))
 
+
 # Combine centroids with labels
+
 centroids <- rbind(
   st_sf(label = "A", geometry = chm_3_centroid),
   st_sf(label = "B", geometry = chm_15_centroid),
@@ -140,13 +151,19 @@ centroids <- rbind(
 
 
 # Convert sf to data frame with coordinates
+
 obs_points_jitter = cbind(obs_points, st_coordinates(obs_points))
 
+
 # Add jitter to x and y (adjust amount as needed)
+
 set.seed(42)  # For reproducibility
 obs_points_jitter$x_jit = obs_points_jitter$X + rnorm(nrow(obs_points_jitter), mean = 0, sd = 500)  # 500 meters jitter
 obs_points_jitter$y_jit = obs_points_jitter$Y + rnorm(nrow(obs_points_jitter), mean = 0, sd = 500)
 
+
+
+# --- plot main map  ---
 
 sample_plot = ggplot() +
 
@@ -200,7 +217,13 @@ max_height <- max(c(max(chm_3_df$height, na.rm = TRUE),
                     max(chm_30_df$height, na.rm = TRUE)))
 
 
-# ----------- CHM 3 Plot with Label
+
+# --- CHM plots ---
+# ------------------------------------------------------------
+
+# --- CHM 3 Plot with Label ---
+
+
 # communal forest - pine forest 3 years post disturbance
 
 center_x <- 501850
@@ -298,6 +321,8 @@ p_chm30 <- ggplot() +
 
 p_chm30
 
+# ------------------------------------------------------------
+
 
 
 # -- sort CHM plots
@@ -313,6 +338,7 @@ p_chm15_nolegend <- p_chm15 +
 p_chm30_nolegend <- p_chm30 + 
   theme(legend.position = "none",
         panel.border = element_rect(color = "grey60", fill = NA, size = 1))
+
 
 
 # --- Stack plots with spacing
@@ -334,11 +360,13 @@ chm_column
 
 
 # Place overview_p on top of sample_plot
+
 sample_plot_inset = ggdraw() +
   draw_plot(sample_plot) +  # Base plot
   draw_plot(overview_p, x = 0.69, y = 0.62, width = 0.4, height = 0.4)  # Inset map in top-right
 
 sample_plot_inset
+
 
 # Combine with overview map, both columns with matching height
 
@@ -352,15 +380,21 @@ final_plot
 ggsave("03_work/results/overview_map.tif", plot = final_plot, dpi = 300, width = 10, height = 6)
 
 
+
+
+
 # ----------------------------------------------
 #  plot with separate sample plots per mngt
 # ----------------------------------------------
 
 # Vector of management types you want to plot
+
 mngt_types <- c("Municipal forest", "Small private", "Large private", 
                 "Set aside", "Federal forest", "State forest", "Other")
 
+
 # Function to create sample_plot per category
+
 create_mngt_plot <- function(mngt_name, label_letter = NULL) {
   
   obs_subset <- obs_points_jitter %>% dplyr::filter(mngt_type == mngt_name)
@@ -403,7 +437,7 @@ p_state <- create_mngt_plot("State forest") +
     width_hint = 0.5,
     height     = unit(0.2, "cm"),
     pad_x      = unit(0.2, "cm"),
-    pad_y      = unit(0.05, "cm")     # ↓ smaller = closer to bottom
+    pad_y      = unit(0.05, "cm")   
   ) +
   theme(plot.margin = margin(0, 0, 0, 0))
 
@@ -418,9 +452,9 @@ p_chm15_nolegend <- p_chm15 +
   guides(
     fill = guide_colorbar(
       title = "Height [m]",
-      title.position = "left",   # title at the left of the bar
-      title.hjust = 1,           # right-align title against the bar
-      barwidth = unit(4, "cm")   # optional: a bit wider bar
+      title.position = "left",   
+      title.hjust = 1,           
+      barwidth = unit(4, "cm")   
     )
   ) +
   theme(
@@ -435,9 +469,10 @@ p_chm30_nolegend <- p_chm30 +
   theme(legend.position = "none",
         panel.border = element_rect(color = "grey60", fill = NA, size = 1))+ theme(plot.margin = margin(0, 0, 0, 0))
 
+
 # Row 1: CHM plots + horizontal legend
 row1 <- plot_grid(p_chm3_legend, p_chm15_nolegend, p_chm30_nolegend, ncol = 3, align = "hv")
-#row1_legend <- plot_grid(legend_p, ncol = 1)
+
 
 # Row 2: First three management types
 row2 <- plot_grid(p_communal, p_small, p_large, ncol = 3, align = "hv")
@@ -446,7 +481,6 @@ row2 <- plot_grid(p_communal, p_small, p_large, ncol = 3, align = "hv")
 row3 <- plot_grid(p_set_aside, p_federal, p_state, ncol = 3, align = "hv")
 
 # Row 4: Other + overview
-#overview_p_frame <- overview_p + theme(panel.border = element_rect(color = "grey60", fill = NA, size = 1))
 row4 <- plot_grid(p_other, overview_p,  ncol = 3,  align = "hv")
 
 # Final grid

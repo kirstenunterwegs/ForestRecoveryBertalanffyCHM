@@ -226,6 +226,7 @@ extract.recovery = function(patch_metadata, buffer_metadata, patch_size_metadata
   buffer = rast(buffer_file)
   buffer <- clamp(buffer, lower = 0, upper = 50, values = TRUE) # set neg val to 0 and very high val to 50 m
   
+  
   #--- create IDlandsat to aggregate values per pixel before getting global stats
   
         ext_buffer = as.polygons(ext(buffer), crs = terra::crs(buffer))
@@ -272,15 +273,18 @@ parallel_extract_recovery <- function(id, patch_metadata, buffer_metadata, patch
 
 
 # Get IDs to process
+
 ids <- unique(patch_metadata$patch_id) # get all patch IDs
 ids_b <- unique(buffer_metadata$patch_id) # get all patch IDs where we extracted buffer area
 ids_size <- unique(patch_size_metadata$patch_id)
 
 # there are more IDs in buffer than in patch_metadata, as those ones are the masked ones, so small/thin patches are excluded
+
 ids <- intersect(ids, ids_b) 
 ids <- intersect(ids, ids_size)
 
 # define number of cores and split ids into different thread categories
+
 n_cores <- 40 # Number of cores to use -> with 8 cores ~ 28 h  / with 40 cores ~ 8 hours
 id_indices <- split(ids, cut(1:length(ids), n_cores, labels = FALSE))
 
@@ -416,15 +420,17 @@ recovery_landsat_filtered <- recovery_landsat_filtered[, mngt_type := as.numeric
 recovery_landsat_filtered <- recovery_landsat_filtered[, ecoregion := as.numeric(ecoregion)]
 
 
+# ---------------------------------------
 # ---- check NAs in various columns -----
+# ---------------------------------------
 
 # --- missing disturbance information 
 
 na_disturbance_year <- recovery_landsat_filtered %>%  # 663 patches with missing disturbance information, :2165 pixels
   filter(is.na(disturbance_year))
 
-  # temporary: delete those data entries
-  # doesn't seem to be specific, rather random in the landscape
+  # delete these entries
+  # pattern of missing disturbance info not specific, but random in the landscape
   recovery_landsat_filtered <- na.omit(recovery_landsat_filtered, cols = "disturbance_year")
 
     
@@ -433,7 +439,7 @@ na_disturbance_year <- recovery_landsat_filtered %>%  # 663 patches with missing
   na_temp <- recovery_landsat_filtered %>%  # 51 patches without or missing climate information
   filter(is.na(temp))
   
-# patches crossing the border of climate data layer, so we just fill up those patches with information from the rest of the patches
+  # patches crossing the border of climate data layer, so we just fill up those patches with information from the rest of the patches
   ids <- unique(na_temp$patch)
   
   # Calculate mean temp and prec per patch, excluding NAs where there is climate information in the patch (21 of 51 patches)
@@ -526,6 +532,7 @@ load("03_work/data_processed/analysis.dt/recovery_all_landsat_filtered_sev0.75__
 
 
 # Separate into two data tables based on the chm_year (earlier vs. later)
+
 recovery_landsat_filtered_sev_firstyr <- recovery_landsat_filtered_sev %>%
   group_by(patch, IDlandsat) %>%
   filter(chm_year == min(chm_year)) %>%  
@@ -545,10 +552,13 @@ save(recovery_landsat_filtered_sev_lastyr, file = "03_work/data_processed/analys
 # ----------------------------------------------------------
 
 setDT(recovery_landsat_filtered_sev_firstyr)
+
 # remove species group 99 (other, where we do not have any species classification by Blickensdörfer)
+
 recovery_landsat_filtered_sev_firstyr = recovery_landsat_filtered_sev_firstyr[species != 99] # remove 24440 obs
 
 # remove all observation from the disturbance year and the year after, to avoid error in disturbance year classification
+
 recovery_landsat_filtered_sev_firstyr[, t := chm_year - disturbance_year]
 recovery_landsat_filtered_sev_firstyr[t < 0, t := 250]
 recovery_landsat_filtered_sev_firstyr = recovery_landsat_filtered_sev_firstyr[t > 1] #remove 12002 observations
@@ -557,8 +567,7 @@ dt_sev0.75_clean_hmean_hmax = recovery_landsat_filtered_sev_firstyr
 
 
 saveRDS(dt_sev0.75_clean_hmean_hmax, "03_work/data_processed/analysis.dt/dt_sev0.75_clean_hmean_hmax.rds")
-
-dt_sev0.75_clean_hmean_hmax = readRDS("03_work/data_processed/analysis.dt/dt_sev0.75_clean_hmean_hmax.rds")
+#dt_sev0.75_clean_hmean_hmax = readRDS("03_work/data_processed/analysis.dt/dt_sev0.75_clean_hmean_hmax.rds")
 
 
 # --------------------------------------------------------------
@@ -569,7 +578,8 @@ dt_sev0.75_clean_hmean_hmax = readRDS("03_work/data_processed/analysis.dt/dt_sev
 
 obs_points <- vect(dt_sev0.75_clean_hmean_hmax, geom = c("x", "y"), crs = "EPSG:25832")
 
-#### ---- spatial sub sampling for 1000 m grid
+
+# ---- spatial sub sampling for 1000 m grid
 
 # raster grid covering the extent
 r <- rast(ext(obs_points), resolution = 1000, crs = "EPSG:25832")
@@ -593,7 +603,8 @@ dt_sev0.75_sampled %>% group_by(mngt_type) %>% count()
 saveRDS(dt_sev0.75_sampled, "03_work/data_processed/analysis.dt/spatial_sub1000.rds")
 
 
-#### ---- spatial sub sampling for 500 m grid
+
+# ---- spatial sub sampling for 500 m grid
 
 r <- rast(ext(obs_points), resolution = 500, crs = "EPSG:25832")
 
@@ -619,7 +630,8 @@ dt_sev0.75_sampled %>% group_by(mngt_type) %>% count()
 saveRDS(dt_sev0.75_sampled, "03_work/data_processed/analysis.dt/spatial_sub500.rds")
 
 
-#### ---- spatial sub sampling for 250 m grid
+
+# ---- spatial sub sampling for 250 m grid
 
 r <- rast(ext(obs_points), resolution = 250, crs = "EPSG:25832")
 
@@ -661,9 +673,9 @@ recovery_landsat_filtered_sev_firstyr_sub <- recovery_dt[, c("prec", "temp", "el
 recovery_landsat_filtered_sev_firstyr_sub <- na.omit(recovery_landsat_filtered_sev_firstyr_sub, cols = "ecoregion")
 recovery_landsat_filtered_sev_firstyr_sub[] <- lapply(recovery_landsat_filtered_sev_firstyr_sub, function(x) {
   if (is.factor(x) || is.character(x)) {
-    as.numeric(factor(x))  # Convert factors or characters to numeric
+    as.numeric(factor(x))  
   } else {
-    as.numeric(x)  # Keep numeric values as they are
+    as.numeric(x)  
   }
 })
 
@@ -675,17 +687,17 @@ corrplot(cor_matrix, method = "circle")
 corrplot(cor_matrix,
          method = "circle",
          type = "upper",     
-         addCoef.col = "black",  # add numbers
-         number.cex = 0.7,       # size of numbers
-         tl.col = "black",       # axis label color
+         addCoef.col = "black",  
+         number.cex = 0.7,       
+         tl.col = "black",       
          tl.cex = 0.8)   
 
 cor_plot = corrplot(cor_matrix,
                     method = "circle",
                     type = "upper",     
-                    addCoef.col = "black",  # add numbers
-                    number.cex = 0.7,       # size of numbers
-                    tl.col = "black",       # axis label color
+                    addCoef.col = "black",  
+                    number.cex = 0.7,       
+                    tl.col = "black",       
                     tl.cex = 0.8)  
 
 
@@ -694,9 +706,9 @@ corrplot(cor_matrix,
          method = "circle",
          type = "upper",
          addCoef.col = "black",
-         number.cex = 1.2,    # Increase number size
+         number.cex = 1.2,    
          tl.col = "black",
-         tl.cex = 1.1)        # Increase label size
+         tl.cex = 1.1)        
 
 dev.off()
 

@@ -105,6 +105,8 @@ for (i in seq_along(years)) {
   
 }
 
+
+
 ##############################################################
 # ------ mask all CHM survey grids to vegetation period -----
 ##############################################################
@@ -295,10 +297,12 @@ process_patches <- function(patch_indices, patches_file, buffers_file, innerbuff
 
 
 # split patches into chunks for parallel processing
+
 n_cores <- 30 # Number of cores to use -> with 8 cores ~ 28 h
 patch_indices <- split(1:length(patches), cut(1:length(patches), n_cores, labels = FALSE))
 
-# Parallel processing
+
+# --- Parallel processing ---
 
 tic("Parallel processing")
 
@@ -331,6 +335,7 @@ all_errors <- do.call(rbind, result) # 20 patches had errors
 stopCluster(cl)
 
 toc()
+
 
 ################# finish CHM extraction ########################################
 

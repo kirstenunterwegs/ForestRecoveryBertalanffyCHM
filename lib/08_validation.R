@@ -76,7 +76,6 @@ ggsave("03_work/data_processed/results/supporting_information/pp_check_lim_asyml
 #--------------------------------------------------------------
 
 recovery_landsat_filtered_sev_firstyr = as.data.table(readRDS("03_work/data_processed/analysis.dt/spatial_sub250.rds"))
-#recovery_landsat_filtered_sev_firstyr = as.data.table(readRDS("03_work/data_processed/analysis.dt/spatial_sub250_v2.rds")) # for alternative subset
 
 
 # now we compare whether this is the same data set as the one used to fit the model
@@ -309,7 +308,7 @@ recovery_landsat_filtered_sev_firstyr = recovery_landsat_filtered_sev_firstyr[
   nomatch = 0
 ]
 
-# rename species_new
+
 olddata = recovery_landsat_filtered_sev_firstyr[, c("IDlandsat","patch","h_mean","t","slope_std","aspect_std", "elevation_std", "patch_ha_log_std", "soil", "species", "mngt_type","log10t", "logt")]     
 newdata = recovery_landsat_filtered_sev_lastyr[, c("IDlandsat","patch","h_mean","t","slope_std","aspect_std","elevation_std", "patch_ha_log_std", "soil", "species", "mngt_type","log10t", "logt")]  
 colnames_data = colnames(olddata)
@@ -325,16 +324,18 @@ head(newdata)
 
 
 # Ensure same chunking
+
 olddata[, chunk := floor(1:nrow(olddata)/1000)]
 newdata[, chunk := floor(1:nrow(newdata)/1000)]
 chunks = unique(olddata$chunk)  # assuming newdata and olddata are aligned
 
 # Allocate space for posterior differences
+
 dh_pred = vector(mode = "list",length = length(chunks))
 hpred1 = vector(mode = "list",length = length(chunks))
 hpred2 = vector(mode = "list",length = length(chunks))
 
-#i=1
+
 
 for(i in seq_along(chunks)){
   chunk_current = chunks[i]
@@ -364,7 +365,7 @@ for(i in seq_along(chunks)){
   }
   
   # Compute posterior difference BEFORE aggregation
-  dh_pred_current = hpred_new - hpred_old  # matrix: iterations x observations
+  dh_pred_current = hpred_new - hpred_old  
   dh_pred_current = colMeans(dh_pred_current)
   
   hpred_old = colMeans(hpred_old)
@@ -383,8 +384,6 @@ hpred2 = unlist(hpred2)
 recovery_landsat_filtered_sev_firstyr$hpred1 = hpred1
 recovery_landsat_filtered_sev_lastyr$hpred2 = hpred2
 
-#ggplot(data = recovery_landsat_filtered_sev_firstyr, aes(x = hpred1, y = h_mean)) + geom_point() + geom_smooth(method = "lm") + theme_classic() + geom_abline(intercept = 0, slope = 1, col = "orange", size = 2)
-#ggplot(data = recovery_landsat_filtered_sev_lastyr, aes(x = hpred2, y = h_mean)) + geom_point() + geom_smooth(method = "lm") + theme_classic() + geom_abline(intercept = 0, slope = 1, col = "orange", size = 2)
 
 # visualize the distribution of predicted height values (for distributions we split to better see them)
 
@@ -420,7 +419,7 @@ save(validation_berta, file = "03_work/analysis/validation/validation_berta_dt_a
 #save(validation_berta, file = "03_work/analysis/validation/validation_berta_dt_student14_reNULL.RData")
 # ----
 
-load("03_work/analysis/validation/validation_berta_dt_asyml_27_reNULL.RData")
+
 
 # --- raw validation ---
 
@@ -434,11 +433,6 @@ load("03_work/analysis/validation/validation_berta_dt_asyml_27_reNULL.RData")
     theme_classic() + xlim(c(-45,25)) + ylim(c(-45,25))
 )
 
-# values below 0
-# sum(validation_berta$h1 <0)
-# ggplot(validation_berta, aes(x=h_mean1)) + geom_histogram() + xlim(-2,2)
-# sum(validation_berta$h2 <0)
-# ggplot(validation_berta, aes(x=h_mean2)) + geom_histogram() + xlim(-2,2)
 
 
 # --- stats ----
@@ -455,6 +449,7 @@ validation_berta[
 ]
 
 # by management
+
 validation_berta[
   , list(
     growth = mean(dh_pred)
@@ -533,95 +528,6 @@ validation_berta_growthstrict[
 # plot validation 
 # ---------------------------------------------
 
-# # --- all observations
-# 
-# stats_all <- validation_berta[
-#   , list(
-#     growth = mean(dh_pred),
-#     r2 = round(cor(dh_pred, dh_emp)^2, 2),
-#     rmse = round(sqrt(mean((dh_pred - dh_emp)^2)), 3),
-#     me = round(mean(dh_pred - dh_emp), 3)
-#   )
-# ]
-# 
-# # Create the annotation text
-# annotation_text_all <- paste0(
-#   "Mean Predicted Growth: ", round(stats_all$growth, 2), "\n",
-#   "R²: ", stats_all$r2, "\n",
-#   "RMSE: ", stats_all$rmse, "\n",
-#   "Bias (ME): ", stats_all$me
-# )
-# 
-# # Build the plot with annotation
-# gval <- ggplot(validation_berta, aes(x = dh_pred, y = dh_emp)) +
-#   geom_point(alpha = 0.1, size = 0.1) +
-#   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
-#   geom_smooth(method = "lm") +
-#   labs(
-#     x = "Predicted delta Height growth",
-#     y = "Observed delta Height growth",
-#     title = "Predicted vs Observed Height growth (no filtering)"
-#   ) +
-#   annotate(
-#     "text",
-#     x = -45,  # You can adjust this if needed
-#     y = 25,   # You can adjust this if needed
-#     hjust = 0, vjust = 1,
-#     label = annotation_text_all,
-#     size = 3.5
-#   ) +
-#   theme_classic() +
-#   xlim(c(-45, 25)) +
-#   ylim(c(-45, 25))
-# 
-# 
-# # --- observations where we expect growth
-# 
-# stats_growthstrict <- validation_berta_growthstrict[
-#   , list(
-#     growth = mean(dh_pred),
-#     r2 = round(cor(dh_pred, dh_emp)^2, 2),
-#     rmse = round(sqrt(mean((dh_pred - dh_emp)^2)), 3),
-#     me = round(mean(dh_pred - dh_emp), 3)
-#   )
-# ]
-# 
-# # create annotation text
-# 
-# annotation_text <- paste0(
-#   "Mean Predicted Growth: ", round(stats_growthstrict$growth, 2), "\n",
-#   "R²: ", stats_growthstrict$r2, "\n",
-#   "RMSE: ", stats_growthstrict$rmse, "\n",
-#   "Bias (ME): ", stats_growthstrict$me
-# )
-# 
-# # plot with annotation
-# 
-# gval_growthstrict <- ggplot(validation_berta_growthstrict, aes(x = dh_pred, y = dh_emp)) +
-#   geom_point(alpha = 0.1, size = 0.1) +
-#   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
-#   geom_smooth(method = "lm") +
-#   labs(
-#     x = "Predicted delta Height growth",
-#     y = "Observed delta Height growth",
-#     title = "Predicted vs Observed Height growth (only growth >= 4 years)"
-#   ) +
-#   annotate(
-#     "text",
-#     x = min(validation_berta_growthstrict$dh_pred, na.rm = TRUE), 
-#     y = max(validation_berta_growthstrict$dh_emp, na.rm = TRUE),
-#     hjust = 0, vjust = 1,
-#     label = annotation_text,
-#     size = 3.5
-#   ) +
-#   theme_classic()
-# 
-# 
-# gcombo = gval + gval_growthstrict
-# 
-# # save to file
-# ggsave(plot = gcombo, filename = "03_work/analysis/validation/gcombo_asyml_27.png", width = 14, height = 7)
-
 
 # --- all observations
 
@@ -635,6 +541,7 @@ stats_all <- validation_berta[
 ]
 
 # Create the annotation text
+
 annotation_text_all <- paste0(
   "Mean Predicted Growth: ", round(stats_all$growth, 2), "\n",
   "R²: ", stats_all$r2, "\n",
@@ -643,6 +550,7 @@ annotation_text_all <- paste0(
 )
 
 # Build the plot with annotation
+
 gval <- ggplot(validation_berta, aes(x = dh_pred_agg, y = dh_emp)) +
   geom_point(alpha = 0.1, size = 0.1) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
@@ -654,8 +562,8 @@ gval <- ggplot(validation_berta, aes(x = dh_pred_agg, y = dh_emp)) +
   ) +
   annotate(
     "text",
-    x = -45,  # You can adjust this if needed
-    y = 25,   # You can adjust this if needed
+    x = -45,  
+    y = 25,   
     hjust = 0, vjust = 1,
     label = annotation_text_all,
     size = 3.5
@@ -665,10 +573,11 @@ gval <- ggplot(validation_berta, aes(x = dh_pred_agg, y = dh_emp)) +
   ylim(c(-45, 25))
 
 
-# --- observations where we expect growth
+# --- observations where we expect growth (strict growth)
 
 
 # Compute statistics
+
 stats_growthstrict <- validation_berta_growthstrict[
   , list(
     growth = mean(dh_pred_agg),
@@ -679,6 +588,7 @@ stats_growthstrict <- validation_berta_growthstrict[
 ]
 
 # Create the annotation text
+
 annotation_text <- paste0(
   "Mean Predicted Growth: ", round(stats_growthstrict$growth, 2), "\n",
   "R²: ", stats_growthstrict$r2, "\n",
@@ -687,6 +597,7 @@ annotation_text <- paste0(
 )
 
 # Build the plot with annotation
+
 gval_growthstrict <- ggplot(validation_berta_growthstrict, aes(x = dh_pred_agg, y = dh_emp)) +
   geom_point(alpha = 0.1, size = 0.1) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
@@ -711,44 +622,6 @@ gval_growthstrict <- ggplot(validation_berta_growthstrict, aes(x = dh_pred_agg, 
 gcombo = gval + gval_growthstrict
 
 ggsave(plot = gcombo, filename = "03_work/analysis/validation/gcombo_asyml_27_agg.png", width = 14, height = 7)
-ggsave(plot = gcombo, filename = "03_work/analysis/validation/gcombo_student14_agg.png", width = 14, height = 7) # with posterior_epred
-
-
-###########################################
-# check on height (difference) predictions: 
-###########################################
-
-
-ggplot(validation_berta_growthstrict, aes(x=as.factor(t1), y=dh_pred_agg)) +
-  geom_point(size=2, alpha=0.4) +
-  geom_violin() + theme_bw()
-
-ggplot(validation_berta_growthstrict, aes(x=as.factor(t1), y=hpred1)) +
-  geom_point(size=2, alpha=0.4) +
-  geom_violin() + theme_bw()
-
-ggplot(validation_berta_growthstrict, aes(x=as.factor(t2), y=hpred2)) +
-  geom_point(size=2, alpha=0.4) +
-  geom_violin() + theme_bw()
-
-
-# for distributions we split to better see them
-g10 = ggplot(data = validation_berta_growthstrict[t1 < 10], aes(x = t1, y = hpred1)) + stat_halfeye(aes(x = as.factor(t1))) + theme_classic()
-g20 = ggplot(data = validation_berta_growthstrict[t1 >= 10 & t1 < 20], aes(x = t1, y = hpred1)) + stat_halfeye(aes(x = as.factor(t1))) + theme_classic()
-g30 = ggplot(data = validation_berta_growthstrict[t1 >= 20 & t1 < 30], aes(x = t1, y = hpred1)) + stat_halfeye(aes(x = as.factor(t1))) + theme_classic()
-
-g10 + g20 + g30 + plot_layout(ncol = 1)
-
-# prediction for newdata:
-g10 = ggplot(data = validation_berta_growthstrict[t2 < 10], aes(x = t2, y = hpred2)) + stat_halfeye(aes(x = as.factor(t2))) + theme_classic()
-g20 = ggplot(data = validation_berta_growthstrict[t2 >= 10 & t2 < 20], aes(x = t2, y = hpred2)) + stat_halfeye(aes(x = as.factor(t2))) + theme_classic()
-g30 = ggplot(data = validation_berta_growthstrict[t2 >= 20 & t2 < 30], aes(x = t2, y = hpred2)) + stat_halfeye(aes(x = as.factor(t2))) + theme_classic()
-
-g10 + g20 + g30 + plot_layout(ncol = 1)
-
-# Take posterior predictions for small t only
-subset_data <- validation_berta[t1 == 2]
-# Inspect distribution for one example observation
-hist(subset_data$hpred1, main = "Distribution of predicted h_mean at t = 2", xlab = "h_mean")
+ggsave(plot = gcombo, filename = "03_work/analysis/validation/gcombo_student14_agg.png", width = 14, height = 7) 
 
 

@@ -1,30 +1,9 @@
 ############################################################################
 #
 # Check model's ability to disentangle g (heigt growth rate) and 
-# hOffset (height offset = distrubance legacies) using synthetic data
+# hOffset (height offset = disturbance legacies) using synthetic data
 #
 ############################################################################
-
-# --- libraries 
-
-# data analysis & wrangling
-library(data.table)
-library(brms)
-library(tictoc)
-library(tidyr)
-library(dplyr)
-library(stringr)
-
-# plotting
-library(ggplot2)
-library(patchwork)
-library(viridis)
-
-
-# set path
-#setwd("~/NAS/Projects/ForestRecovery/")
-setwd("E:/Projects/ForestRecovery/")
-
 
 # -------------------------------------------------------------------------
 # Setup
@@ -74,6 +53,28 @@ setwd("E:/Projects/ForestRecovery/")
 # -------------------------------------------------------------------------
 
 
+# --- libraries 
+
+# data analysis & wrangling
+library(data.table)
+library(brms)
+library(tictoc)
+library(tidyr)
+library(dplyr)
+library(stringr)
+
+# plotting
+library(ggplot2)
+library(patchwork)
+library(viridis)
+
+
+# --- set working directory 
+
+setwd("~/NAS/Projects/ForestRecovery/")
+
+
+
 ################# Single simulation ########################
 
 
@@ -82,7 +83,7 @@ n_fixed <- 20       # Number of rows with t = 150
 n_random <- n_synthetic - n_fixed # number of observation in other time window
 
 
-# prepare different hmax for different patch IDs to generate synthetic data; patches represent disturbance patches
+# prepare different hmax for different disturbance patch IDs to generate synthetic data; patches represent disturbance patches
 
 selected_patches = c("100603", "100174", "100169", "1007344", "1002348", "1010147", "1010292", "1009814", "1007813", "100030", "100894", "1010434", "1009612",
                      "1010869", "1008131", "1008392", "1009341", "1010831", "1007956", "1009902", "1007126", "1005823", "100167", "1007497", "1009106", "1002333",
@@ -113,7 +114,7 @@ synthetic_data <- tibble(
 # -- without different management classes
 
 g = 0.08 # g between 0.03 and 0.09 is realistic
-# we add noise to the height estimates ad varying degrees; we substract the 2 from hmax, as we set this as the hOffset
+# we add noise to the height estimates ad varying degrees; we subtract the 2 from hmax, as we set this as the hOffset
 synthetic_data$h = (synthetic_data$hmax - 2) * (1 - exp(-g * synthetic_data$t))^3 + rnorm(nrow(synthetic_data), 2, 6) # mean error 2m with SD 6 m; alternative: rnorm(nrow(synthetic_data), 0, 3)
 
 
@@ -164,19 +165,14 @@ toc()
 save(synthetic_fit, file = "03_work/models/synthetic_fit_gaussian_sigma_v1.RData")
 load("03_work/models/synthetic_fit_gaussian_sigma_v1.RData")
 
-# explore model estimates and compare with set g and hOffset in synthetic data generation
-
 
 # check the model:
+
 print(synthetic_fit, digits = 3)
 plot(synthetic_fit)
 
-# check prior assumptions
-get_prior( 
-  synthetic_fit
-)
-
 # extract model estimates
+
 g = fixef(synthetic_fit)["g_Intercept", "Estimate"]
 ranef_g = ranef(synthetic_fit)$patch[, , "g_Intercept"]
 g_patch = g + ranef_g[, "Estimate"]
@@ -221,6 +217,7 @@ mean(hOffset_patch)
 
 
 # Define variations
+
 t_ranges <- list(
   #"0-20" = function(n) runif(n, min = 0, max = 20),
   #"15-30" = function(n) runif(n, min = 15, max = 30),
@@ -344,15 +341,10 @@ for (replicate_id in 1:num_replicates) {
 
 df.hOffset_10 <- results_df
 
-# Save results as RDS
-#saveRDS(results_df, "03_work/models/sensitivity_synthetic_sim_reps_narrow_prior_rep2.rds") # 1m hOffset + noise
-#saveRDS(df.hOffset_10, "03_work/models/sensitivity_synthetic_sim_reps_hOff10_rep3.rds") # 10m hOffset
 
-
-results_df <- readRDS("03_work/analysis/synthetic_simulation/models/sensitivity_synthetic_sim_reps_narrow_prior_rep2.rds")
-#results_df <- readRDS("03_work/models/sensitivity_synthetic_sim_reps_hOff10_rep3.rds")
 
 # Convert results_df to long format for plotting
+
 plot_data <- results_df %>%
   pivot_longer(cols = c(g_patch_estimate, hOffset_patch_estimate),
                names_to = "parameter",
@@ -394,8 +386,7 @@ g_patch_plot <- ggplot(filter(plot_data, parameter == "g_patch"), aes(x = estima
   theme(legend.position = "bottom")
 
 
-#ggsave("03_work/models/g_patch_histogram_sim2rep_n.prior.png", plot = g_patch_plot, width = 10, height = 6, dpi = 300)
-ggsave("03_work/analysis/synthetic_simulation/synthetic_simulation/g_patch_hist_hOffset_10m.tiff", plot = g_patch_plot, width = 10, height = 6, dpi = 300)
+ggsave("03_work/analysis/synthetic_simulation/g_patch_hist_hOffset_10m.tiff", plot = g_patch_plot, width = 10, height = 6, dpi = 300)
 
 # -- plot hOffset
 
@@ -409,8 +400,8 @@ hOffset_patch_plot <- ggplot(filter(plot_data, parameter == "hOffset_patch"), ae
        x = "hOffset_patch Estimate", y = "Count", fill = "t_range") +
   theme(legend.position = "bottom")
 
-#ggsave("03_work/models/hOffset_patch_histogram_sim2rep_n.prior.png", plot = hOffset_patch_plot, width = 10, height = 6, dpi = 300)
-ggsave("03_work/analysis/synthetic_simulation/synthetic_simulation/hOffset_patch_hist_hOffset_10m.tiff", plot = hOffset_patch_plot, width = 10, height = 6, dpi = 300)
+ggsave("03_work/analysis/synthetic_simulation/hOffset_patch_hist_hOffset_10m.tiff", plot = hOffset_patch_plot, width = 10, height = 6, dpi = 300)
+
 
 hOffset_patch_plot_sub <- ggplot(filter(plot_data, parameter == "hOffset_patch" & t_range == "0-35,150"), aes(x = estimate, fill = t_range)) +
   geom_histogram(alpha = 0.6, bins = 15, position = "identity") +
@@ -422,7 +413,7 @@ hOffset_patch_plot_sub <- ggplot(filter(plot_data, parameter == "hOffset_patch" 
        x = "hOffset_patch Estimate", y = "Count", fill = "t_range") +
   theme(legend.position = "bottom")
 
-ggsave("03_work/analysis/synthetic_simulation/synthetic_simulation/hOffset_patch_hist_hOffset_10m_t0-15.150.tiff", plot = hOffset_patch_plot_sub, width = 10, height = 6, dpi = 300)
+ggsave("03_work/analysis//synthetic_simulation/hOffset_patch_hist_hOffset_10m_t0-15.150.tiff", plot = hOffset_patch_plot_sub, width = 10, height = 6, dpi = 300)
 
 
 
@@ -437,6 +428,7 @@ ggsave("03_work/analysis/synthetic_simulation/synthetic_simulation/hOffset_patch
 
 
 # Define the parameter grid
+
 g_values <- c(0.03, 0.06, 0.09)  # Growth rates
 h_noise_levels <- c(1, 5,10)  # Noise standard deviations
 hmax_noise_levels <- c(1, 5, 10) 
@@ -465,6 +457,7 @@ patch_hmax_mapping <- tibble(
 results_df <- tibble()
 
 # Start the repeated simulations
+
 for (replicate_id in 1:num_replicates) {
   for (i in seq_len(nrow(param_grid))) {
     
@@ -473,6 +466,7 @@ for (replicate_id in 1:num_replicates) {
     hmax_noise <- param_grid$hmax_noise[i]
     
     # Generate synthetic data
+    
     synthetic_data <- tibble(
       t = c(runif(n_random, min = 0, max = 35), rep(150, n_fixed)),  # Time points
       patch = sample(selected_patches, n_synthetic, replace = TRUE)
@@ -482,6 +476,7 @@ for (replicate_id in 1:num_replicates) {
       mutate(hmax = hmax + rnorm(n_synthetic, 0, hmax_noise)) # apply noise on hmax
     
     # Fit Bayesian model
+    
     tic(paste("Replicate:", replicate_id, "- Fitting model for g =", g_val, "and h_noise =", h_noise))
     synthetic_fit <- brm(
       bf(
@@ -506,6 +501,7 @@ for (replicate_id in 1:num_replicates) {
     toc()
     
     # Extract estimates
+    
     g_estimate <- fixef(synthetic_fit)["g_Intercept", "Estimate"]
     ranef_g <- ranef(synthetic_fit)$patch[, , "g_Intercept"]
     g_patch <- g_estimate + ranef_g[, "Estimate"]
@@ -515,6 +511,7 @@ for (replicate_id in 1:num_replicates) {
     hOffset_patch <- hOffset_estimate + ranef_hOffset[, "Estimate"]
     
     # Convert to tibble for storing
+    
     result_entry <- tibble(
       replicate = replicate_id,
       g_input = g_val,
@@ -526,6 +523,7 @@ for (replicate_id in 1:num_replicates) {
     )
     
     # Append to results_df
+    
     results_df <- bind_rows(results_df, result_entry)
   }
 }
@@ -533,12 +531,13 @@ for (replicate_id in 1:num_replicates) {
 df_false_hmax <- results_df
 
 # Save results as RDS
-#saveRDS(df_false_hmax, "03_work/analysis/synthetic_simulation/models/sensitivity_synthetic_sim_reps_falsehmax.rds")
 
-results_df <- readRDS("03_work/analysis/synthetic_simulation/models/sensitivity_synthetic_sim_reps_falsehmax.rds")
+saveRDS(df_false_hmax, "03_work/analysis/synthetic_simulation/models/sensitivity_synthetic_sim_reps_falsehmax.rds")
+#results_df <- readRDS("03_work/analysis/synthetic_simulation/models/sensitivity_synthetic_sim_reps_falsehmax.rds")
 
 
 # Convert results_df to long format for plotting
+
 plot_data <- results_df %>%
   pivot_longer(cols = c(g_patch_estimate, hOffset_patch_estimate),
                names_to = "parameter",
@@ -548,7 +547,6 @@ plot_data <- results_df %>%
                        labels = c("g_patch", "hOffset_patch")),
     g = factor(g_input),
     h_noise = factor(h_noise_input),
-    #t_range = factor
     hmax_noise_input = factor(hmax_noise_input)
   ) %>%
   
@@ -566,6 +564,7 @@ plot_data <- results_df %>%
     TRUE ~ as.character(h_noise)), 
     levels = c("h noise 1", "h noise 5", "h noise 10")
   ))
+
 
 # g
 
@@ -628,6 +627,7 @@ h_noise_levels <- c(1, 3, 5)  # Noise standard deviations
 # h_noise_levels <- c(1, 5, 10)  # Noise standard deviations
 
 # Expand grid of all parameter combinations
+
 param_grid <- expand.grid(
   t_range = names(t_ranges),
   g = g_values,
@@ -635,6 +635,7 @@ param_grid <- expand.grid(
 )
 
 # Set constants
+
 n_synthetic <- 600
 n_fixed <- 20
 n_random <- n_synthetic - n_fixed
@@ -661,6 +662,7 @@ results_df <- tibble()
 
 
 # Start the repeated simulations
+
 for (replicate_id in 1:num_replicates) {  # number of repeated simulations
   for (i in seq_len(nrow(param_grid))) {  # go through each parameter & noise combination
     
@@ -687,6 +689,7 @@ for (replicate_id in 1:num_replicates) {  # number of repeated simulations
     
     
     # Fit Bayesian model
+    
     tic(paste(
       "Replicate:", replicate_id, 
       "- t_range:", t_range_name,
@@ -724,6 +727,7 @@ for (replicate_id in 1:num_replicates) {  # number of repeated simulations
     get_prior(synthetic_fit3)
     
     # Extract estimates
+    
     g_estimate <- fixef(synthetic_fit3)["g_Intercept", "Estimate"]
     ranef_g <- ranef(synthetic_fit3)$patch[, , "g_Intercept"]
     g_patch <- g_estimate + ranef_g[, "Estimate"]
@@ -738,6 +742,7 @@ for (replicate_id in 1:num_replicates) {  # number of repeated simulations
    
     
     # Convert to tibble for storing
+    
     result_entry <- tibble(
       replicate = replicate_id
       ,t_range = t_range_name
@@ -750,6 +755,7 @@ for (replicate_id in 1:num_replicates) {  # number of repeated simulations
     )
     
     # Append to results_df
+    
     results_df <- bind_rows(results_df, result_entry)
   }
 }
@@ -757,13 +763,15 @@ for (replicate_id in 1:num_replicates) {  # number of repeated simulations
 hmax_fit2 <- results_df
 
 saveRDS(hmax_fit2, "03_work/analysis/synthetic_simulation/models/sensitivity_synthetic_sim_hmax_fit2.rds")
-results_df <- readRDS("03_work/analysis/synthetic_simulation/models/sensitivity_synthetic_sim_hmax_fit2.rds")
+#results_df <- readRDS("03_work/analysis/synthetic_simulation/models/sensitivity_synthetic_sim_hmax_fit2.rds")
+
 
 # calculate hmax (hmaxstar + hOffset)
 
 results_df$hmax_patch <- results_df$hmaxstar_estimate + results_df$hOffset_patch_estimate
 
 # Convert results_df to long format for plotting
+
 plot_data <- results_df %>%
   pivot_longer(cols = c(g_patch_estimate, hOffset_patch_estimate, hmax_patch),
                names_to = "parameter",
@@ -802,8 +810,6 @@ g_patch_plot <- ggplot(filter(plot_data, parameter == "g_patch"), aes(x = estima
   theme(legend.position = "bottom")
 g_patch_plot
 
-#gsave("03_work/analysis/synthetic_simulation/synthetic_simulation/g_patch_hist_hOffset_10m_update.tiff", plot = g_patch_plot, width = 10, height = 6, dpi = 300)
-
 # hOffset
 
 hOffset_patch_plot <- ggplot(filter(plot_data, parameter == "hOffset_patch"), aes(x = estimate, fill = t_range)) +
@@ -816,7 +822,6 @@ hOffset_patch_plot <- ggplot(filter(plot_data, parameter == "hOffset_patch"), ae
        x = "hOffset_patch Estimate", y = "Count", fill = "t_range") +
   theme(legend.position = "bottom")
 hOffset_patch_plot
-#ggsave("03_work/analysis/synthetic_simulation/synthetic_simulation/hOffset_patch_hist_hOffset_10m_update.tiff", plot = hOffset_patch_plot, width = 10, height = 6, dpi = 300)
 
 # hmax
 
@@ -842,10 +847,12 @@ hist(patch_hmax_mapping$hmax)
 ################################################################################
 
 # Define the grid for g and h_noise
+
 g_diff_values <- seq(0, 0.04, by = 0.02)  # g difference between mngt 1 and mngt 0 (from no difference to 0.04)
 h_offset_diff_values <- seq(0, 10, by = 4)  # Varying Offset from 0 to 10
 
 # Define the synthetic data settings
+
 n_synthetic <- 800
 n_fixed <- 20       # Number of rows with t = 150
 n_random <- n_synthetic - n_fixed
@@ -867,14 +874,17 @@ patch_hmax_mapping <- tibble(
 
 
 # Create an empty dataframe to store results
+
 results_df <- tibble()
 
 # Start the repeated simulations
+
 for (replicate_id in 1:num_replicates) {
   for (g_diff in g_diff_values) {  # Loop over g differences
     for (h_offset_diff in h_offset_diff_values) {  # Loop over h_noise_diff levels
       
       # Create the synthetic data
+      
       synthetic_data <- tibble(
         t = c(runif(n_random, min = 0, max = 35), rep(150, n_fixed)),  # Generate a sequence of t
         patch = sample(selected_patches, n_synthetic, replace = TRUE)  # Randomly assign patches to rows
@@ -889,12 +899,14 @@ for (replicate_id in 1:num_replicates) {
         left_join(patch_mngt_mapping, by = "patch")
       
       # Assign different g and hOffset  based on mngt 
+      
       synthetic_data$g <- ifelse(synthetic_data$mngt == 1, 0.03 + g_diff, 0.05)  # g difference for mngt = 1 and mngt = 0
       
       synthetic_data$h <- synthetic_data$hmax * (1 - exp(-synthetic_data$g * synthetic_data$t))^3 + 
         rnorm(nrow(synthetic_data), mean = ifelse(synthetic_data$mngt == 1, 2 + h_offset_diff, 2), sd = 2)  # Varying the mean; here h noise 2 m
       
       # Fit the model
+      
       tic(paste("Replicate:", replicate_id, "- Fitting model for g_diff =", g_diff, "and h_offset_diff =", h_offset_diff))
       
       synthetic_fit = brms::brm(
@@ -920,7 +932,8 @@ for (replicate_id in 1:num_replicates) {
       
       toc()
       
-      # Extract estimates 
+      # Extract estimates
+      
       g_estimate <- fixef(synthetic_fit)["g_Intercept", "Estimate"]
       g_mngt1 <- fixef(synthetic_fit)["g_mngt", "Estimate"]
       
@@ -929,8 +942,6 @@ for (replicate_id in 1:num_replicates) {
       ranef_g$patch <- rownames(ranef_g)
       ranef_g <- merge(ranef_g,  unique(synthetic_data[,c("patch","mngt")]), by = "patch", all.x = F)
       ranef_g$g_patch <- ifelse(ranef_g$mngt==0, (ranef_g$Estimate + g_estimate), (ranef_g$Estimate +g_estimate + g_mngt1))
-      
-     # g_patch <- g_estimate + ranef_g[, "Estimate"]
       
       hOffset_estimate <- fixef(synthetic_fit)["hOffset_Intercept", "Estimate"]
       hOffset_mngt1 <- fixef(synthetic_fit)["hOffset_mngt", "Estimate"]
@@ -941,9 +952,8 @@ for (replicate_id in 1:num_replicates) {
       ranef_hOffset <- merge(ranef_hOffset,  unique(synthetic_data[,c("patch","mngt")]), by = "patch", all.x = F)
       ranef_hOffset$hOffset_patch <- ifelse(ranef_hOffset$mngt==0, (ranef_hOffset$Estimate + hOffset_estimate), (ranef_hOffset$Estimate +hOffset_estimate + hOffset_mngt1))
       
-      #hOffset_patch <- hOffset_estimate + ranef_hOffset[, "Estimate"]
-      
       # Convert to tibble for storing
+      
       result_entry <- tibble(
         replicate = replicate_id,
         g_diff = g_diff,
@@ -955,6 +965,7 @@ for (replicate_id in 1:num_replicates) {
       )
       
       # Append to results_df
+      
       results_df <- bind_rows(results_df, result_entry)
     }
   }
@@ -963,10 +974,9 @@ for (replicate_id in 1:num_replicates) {
 df_g_offset_diff <- results_df
 
 # -- Save results as RDS
-#saveRDS(df_g_offset_diff, "03_work/analysis/synthetic_simulation/models/sensitivity_synthetic_sim_reps_mngt_diff_hnoise2.rds")
 
-
-results_df <- readRDS("03_work/analysis/synthetic_simulation/models/sensitivity_synthetic_sim_reps_mngt_diff_hnoise2.rds")
+saveRDS(df_g_offset_diff, "03_work/analysis/synthetic_simulation/models/sensitivity_synthetic_sim_reps_mngt_diff_hnoise2.rds")
+#results_df <- readRDS("03_work/analysis/synthetic_simulation/models/sensitivity_synthetic_sim_reps_mngt_diff_hnoise2.rds")
 
 
 # -- Convert results_df to long format for plotting
@@ -999,6 +1009,7 @@ plot_data <- results_df %>%
   ))
 
 # Define your label order explicitly (to ensure facets follow this order)
+
 g_diff_levels <- c("g1 & g2: 0.05",
                    "g0: 0.05 ; g1: 0.03",
                    "g0: 0.05 ; g1: 0.07")
@@ -1030,7 +1041,7 @@ g_mngt <- ggplot(filter(plot_data, str_detect(parameter, "g_patch_estimate")), a
 
 g_mngt
 
-ggsave("03_work/analysis/synthetic_simulation/synthetic_simulation/g_estimation_mngt_hnoise2_paperversion.tiff", plot = g_mngt, width = 11, height = 6.5, dpi = 300)
+ggsave("03_work/analysis/synthetic_simulation/g_estimation_mngt_hnoise2_paperversion.tiff", plot = g_mngt, width = 11, height = 6.5, dpi = 300)
 
 
 
@@ -1051,6 +1062,6 @@ hOffset_mngt <- ggplot(filter(plot_data, str_detect(parameter, "hOffset_patch_es
 
 hOffset_mngt
 
-ggsave("03_work/analysis/synthetic_simulation/synthetic_simulation/hOffset_estimation_mngt_hnoise2_paperversion.tiff", plot = hOffset_mngt, width = 10, height = 6, dpi = 300)
+ggsave("03_work/analysis/synthetic_simulation/hOffset_estimation_mngt_hnoise2_paperversion.tiff", plot = hOffset_mngt, width = 10, height = 6, dpi = 300)
 
 

@@ -122,6 +122,7 @@ n_non_na <- global(!is.na(patches_bavaria), "sum", na.rm = TRUE)[1, 1]
 n_non_na * 0.09 # 482,403 ha
 
 
+
 ####################################################################
 # --- subset to only disturbances initialized by natural agents ---
 ####################################################################
@@ -141,9 +142,6 @@ writeRaster(patches_bavaria, "03_work/data_processed/disturbances/patches/distur
 n_non_na <- global(!is.na(patches_bavaria), "sum", na.rm = TRUE)[1, 1]
 n_non_na * 0.09 # 170,362.8 ha
 
-# # reproject to fit local bavaria layers
-# patches_bavaria <- project(patches_bavaria, "EPSG:25832", method = "near") 
-# writeRaster(patches_bavaria, "03_work/data_processed/disturbances/patches/disturbance_patches_merged_unique_ids_bavaria_natural.agent_25832.tif", overwrite = TRUE)
 
 
 #####################################################################################
@@ -205,6 +203,8 @@ writeRaster(patches_bavaria_protected.masked, "03_work/data_processed/disturbanc
 
 n_non_na <- global(!is.na(patches_bavaria_protected.masked), "sum", na.rm = TRUE)[1, 1]
 n_non_na * 0.09 # 170,362.8 ha
+
+
 
 #######################################################################################################
 # --- mask out Orthophoto survey dates pre June and post September to avoid distortions in the CHMs ---
@@ -286,6 +286,7 @@ n_non_na * 0.09 # 170,362.8 ha
 
 disturbance.patch.polygons <- as.polygons(patches_bavaria_protected_survey.masked, aggregate = T, values=T, na.rm=TRUE)
 
+
 # calculate area of each patch
 
 disturbance.patch.polygons$area.ha <- expanse(disturbance.patch.polygons, unit="ha", transform=TRUE)
@@ -293,17 +294,14 @@ sum(disturbance.patch.polygons$area.ha) # 133689.1 ha - 48473 patches
 
 writeVector(disturbance.patch.polygons, "03_work/data_processed/disturbances/patches/disturbance_patches_filtered_all.gpkg", overwrite=T)
 
-# subset to patches larger than 0.1 ha  
-disturbance.patch.polygons_sub_0.1 <- disturbance.patch.polygons[disturbance.patch.polygons$area.ha > 0.1]
-
-sum(disturbance.patch.polygons_sub_0.1$area.ha)#  133527.8 ha - 46681 patches (~ 4% filtered out)
-writeVector(disturbance.patch.polygons_sub_0.1, "03_work/data_processed/disturbances/patches/disturbance_patches_filtered_0.1ha.gpkg", overwrite=T)
 
 # subset to patches larger than 0.25 ha  
+
 disturbance.patch.polygons_sub_0.25 <- disturbance.patch.polygons[disturbance.patch.polygons$area.ha > 0.25]
 
 sum(disturbance.patch.polygons_sub_0.25$area.ha)# 133346.7 ha - 45675 patches (~ 6% filtered out)
 writeVector(disturbance.patch.polygons_sub_0.25, "03_work/data_processed/disturbances/patches/disturbance_patches_filtered_0.25ha.shp", overwrite=T)  
+
 
 # -- load disturbance polygons for further processing
 
@@ -312,6 +310,7 @@ disturbance.patch.polygons.25832 <- project(disturbance.patch.polygons_sub, "EPS
 
 writeVector(disturbance.patch.polygons.25832,"03_work/data_processed/disturbances/patches/disturbance_patches_filtered_0.25ha_25832.gpkg" )
 disturbance.patch.polygons_sub <- vect("03_work/data_processed/disturbances/patches/disturbance_patches_filtered_0.25ha_25832.gpkg")
+
 
 
 #-- buffer polygons to extract surrounding (intact) forest canopy and mask edge area of distrubance patches on the inside

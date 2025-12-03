@@ -47,13 +47,16 @@ baywald <- vect("02_dataRaw/set_aside_forests/selected_set_aside/forest.bay_wald
 
 setasides <- rbind(reserves, bdg, baywald)
 
+
 # load ownership map 
 
 ownership <- vect("02_dataRaw/ownership/Forstliche_bersichtskarte_lyrx.shp")
 
 unique(ownership$besitzart)
 
+
 # simplify ownership df and add ID 
+
 ownership$besitzart[ownership$besitzart == "Sonstiger Staatswald SO"] <- "Staatswald ST" # collapse state forest categories
 ownership$mngt_type <- as.integer(factor(ownership$besitzart, levels = unique(ownership$besitzart)))
 
@@ -64,7 +67,9 @@ ownership.df <- as.data.frame(ownership)
 
 ownership_masked <- mask(ownership, setasides, inverse = TRUE) # mask out set aside areas
 
+
 # change attribute table setup for setasides to merge with the masked ownership vector layer
+
 setasides_transformed <- setasides[, c("objectid", "besitzart", "name", "aelf", "gemeinde", "waldges")]
 names(setasides_transformed) <- c("code", "besitzart", "globalid", "st_area_sh", "st_length_", "mngt_type")
 setasides_transformed$mngt_type <- 0 # all set aside forests get mngt ID 0!
@@ -72,6 +77,7 @@ setasides_transformed$mngt_type <- 0 # all set aside forests get mngt ID 0!
 ownership_update <- rbind(ownership_masked, setasides_transformed)
 
 writeVector(ownership_update, "03_work/data_processed/management/ownership_update.shp")
+
 
 
 #%%%%%%%%%%%%%%%%% (2) topography %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -92,6 +98,7 @@ names(topo.stack) <- c("elevation", "slope", "aspect")
 writeRaster(topo.stack, "03_work/data_processed/topography/topography_bavaria.tif", overwrite = T)
 
 
+
 #%%%%%%%%%%%%%%%%% (3) climate %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 temp <- rast("02_dataRaw/dwd/multi_annual_air_temp_mean_1991_2020_17_25832.tiff")
@@ -104,6 +111,7 @@ climate.stack <- c(temp.bavaria, precp.bavaria)
 names(climate.stack) <- c("temp", "prec")
 
 writeRaster(climate.stack, "03_work/data_processed/climate/climate_bavaria.tiff", overwrite = T)
+
 
 
 #%%%%%%%%%%%%%%%%% (4) soil code %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

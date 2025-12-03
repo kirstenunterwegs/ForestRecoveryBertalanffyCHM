@@ -84,7 +84,8 @@ fit_fe_sub250_cmdLOG_asymlap27
 # fit_fe_sub250_cmdLOG_asymlap27_sub1000
 
 
-# Define model to analyze
+# Set model to analyze
+
 #---------------------------------------
 model = fit_fe_sub250_cmdLOG_asymlap27
 #model = fit_fe_sub250_cmdLOG_student14
@@ -165,12 +166,17 @@ mngt_colors <- c(
 ### ------ version with posterior draws ------- ###
 
 # --- Extract posterior draws ---
+
 draws <- as_draws_df(model)
 
+
 # model components to extract
+
 components <- c("gLOG", "hOffsetLOG", "hmaxstarLOG")
 
+
 # --- fixed Effects (exclude intercepts) ---
+
 fixed_effects <- draws %>%
   select(matches("^b_")) %>%
   select(-matches("Intercept")) %>%
@@ -183,7 +189,9 @@ fixed_effects <- draws %>%
     Draw_exp = (exp(Draw) - 1) * 100
   )
 
+
 # summarise fixed effects
+
 fixed_summary <- fixed_effects %>%
   group_by(Component, Variable, Type) %>%
   summarise(
@@ -212,7 +220,9 @@ random_effects <- draws %>%
     Draw_exp = (exp(Draw) - 1) * 100
   )
 
+
 # summarise SD across group levels per draw, then summarise SDs across draws
+
 random_summary <- random_effects %>%
   group_by(Component, Variable, DrawIndex = rep(1:(n() / length(unique(Level))), each = length(unique(Level)))) %>%
   summarise(Draw_sd = sd(Draw_exp), .groups = "drop") %>%
@@ -231,6 +241,7 @@ random_summary <- random_effects %>%
 
 
 # --- rename variables for plotting ---
+
 var_labels <- c(
   "elevation_std" = "Elevation",
   "slope_std" = "Slope",
@@ -242,7 +253,9 @@ var_labels <- c(
   "sd_species" = "Forest type"
 )
 
+
 # define function to prepare data for plotting
+
 prep_plot_data <- function(df, component_name, effect_type, fixed_levels = NULL) {
   out <- df %>%
     dplyr::filter(Component == component_name, Type == effect_type) %>%
@@ -256,12 +269,14 @@ prep_plot_data <- function(df, component_name, effect_type, fixed_levels = NULL)
   out
 }
 
+
 # prepare data for fixed effects
 
 plot_g_fixed     <- prep_plot_data(fixed_summary, "g", "Fixed")
 fixed_order     <- levels(plot_g_fixed$Variable) # lock in order of fixed effects for the growth rate
 plot_h_fixed    <- prep_plot_data(fixed_summary, "hOffset",  "Fixed", fixed_levels = fixed_order)
 plot_hmax_fixed <- prep_plot_data(fixed_summary, "hmaxstar", "Fixed", fixed_levels = fixed_order)
+
 
 # prepare data for random effects
 
@@ -283,6 +298,7 @@ get_x_limits <- function(fixed_df, random_df, component_name) {
 xlims_g <- get_x_limits(fixed_summary, random_summary, "g")
 xlims_h <- get_x_limits(fixed_summary, random_summary, "hOffset")
 xlims_hmax <- get_x_limits(fixed_summary, random_summary, "hmaxstar")
+
 
 # function to create plots
 
@@ -335,12 +351,14 @@ make_effect_plot <- function(data, component_label, effect_label,
   return(p)
 }
 
+
 # --- plot growth rate variable estimates
 
 pg_random    <- make_effect_plot(plot_g_random,    "Growth rate", "Random effects",
                                  show_x = FALSE, show_y = TRUE,  xlim = xlims_g, panel_tag = "(a)")
 pg_fixed     <- make_effect_plot(plot_g_fixed,     "", "Fixed effects",
                                  show_x = TRUE, show_y = TRUE,  xlim = xlims_g, panel_tag = "(d)")
+
 
 # --- plot disturbance legacies estimates
 
@@ -349,14 +367,14 @@ ph_random    <- make_effect_plot(plot_h_random,    "Disturbance legacies", "",
 ph_fixed     <- make_effect_plot(plot_h_fixed,     "", "",
                                  show_x = TRUE, show_y = FALSE, xlim = xlims_h, panel_tag = "(e)")
 
+
 # --- plot asymptotic height estimates
 
-# phmax_random <- make_effect_plot(plot_hmax_random, "Asymptotic\ncanopy height", "",
-#                                  show_x = FALSE, show_y = TRUE, xlim = xlims_hmax)
 phmax_random <- make_effect_plot(plot_hmax_random, "Asymptotic canopy height", "",
                                  show_x = FALSE, show_y = FALSE, xlim = xlims_hmax, panel_tag = "(c)")
 phmax_fixed  <- make_effect_plot(plot_hmax_fixed,  "", "",
                                  show_x = TRUE, show_y = FALSE, xlim = xlims_hmax, panel_tag = "(f)")
+
 
 
 overall_effects <-
@@ -373,6 +391,7 @@ ggsave("03_work/results/all_model_effects_transformed_asyml27_panels.jpg", plot 
 
 #ggsave("03_work/results/results_control/all_model_effects_asyml27_sub500.tif", plot = overall_effects, dpi = 300, width = 14, height = 8)
 #ggsave("03_work/results/results_control/all_model_effects_asyml27_sub1000.tif", plot = overall_effects, dpi = 300, width = 14, height = 8)
+
 
 
 # --------------------------------------------------
@@ -426,6 +445,7 @@ posterior_g_mngt <- posterior_g_mngt %>%
     mngt_label = factor(mngt_label, levels = levels(g_summary$mngt_label))
   )
 
+
 # apply same to hOffset, preserving order from g_summary
 
 posterior_hOffset_mngt <- posterior_hOffset_mngt %>%
@@ -433,6 +453,7 @@ posterior_hOffset_mngt <- posterior_hOffset_mngt %>%
   mutate(
     mngt_label = factor(mngt_label, levels = levels(g_summary$mngt_label))
   )
+
 
 # apply same to hmaxstar, preserving order from g_summary
 posterior_hmax_mngt <- posterior_hmax_mngt %>%
@@ -448,6 +469,7 @@ posterior_hmax_mngt <- posterior_hmax_mngt %>%
 median_g <- median(posterior_g_mngt$g, na.rm = TRUE)
 median_hOffset <- median(posterior_hOffset_mngt$hOffset, na.rm = TRUE)
 median_hmax <- median(posterior_hmax_mngt$hmaxstar, na.rm = TRUE)
+
 
 
 # ---- plot g ----
@@ -569,10 +591,8 @@ new_data <- expand_grid(
   mutate(
     slope_std = 0,
     aspect_std = 0,
-    #temp_std = 0,
     elevation_std = 0,
     patch_ha_log_std = 0,
-    #h_sd_std = 0
   )
 
 setDT(new_data)
@@ -582,6 +602,7 @@ new_data = new_data[t>1]
 new_data[, t_alt := t]
 new_data[, t_alt := fifelse(t == 250, 35, t)]
 new_data[, log10t := log10(t_alt)]
+
 
 # identify valid mngt:species combinations in the data for model fit and filter for those in the new data dt
 
@@ -599,6 +620,7 @@ hpred = vector(mode = "list", length = length(chunks))
 
 # List to store prediction draws
 draws_list <- vector("list", length(chunks))
+
 
 # Collect posterior draws for each chunk
 
@@ -620,19 +642,18 @@ hpred= unlist(draws_list)
 new_data_filtered$hpred = hpred
 
 
-save(new_data_filtered, file = "03_work/analysis/growth_curve_simulations/intermediate_results/predictions_asyml27_growth_curves_mngt_nointeract.RData")
+#save(new_data_filtered, file = "03_work/analysis/growth_curve_simulations/intermediate_results/predictions_asyml27_growth_curves_mngt_nointeract.RData")
 #save(new_data_filtered, file = "03_work/analysis/growth_curve_simulations/predictions_student14_growth_curves_mngtonly.RData")
 
-load("03_work/analysis/growth_curve_simulations/predictions_asyml27_reNULL_growth_curves_mngtonly.RData")
+#load("03_work/analysis/growth_curve_simulations/predictions_asyml27_reNULL_growth_curves_mngtonly.RData")
 #load("03_work/analysis/growth_curve_simulations/predictions_student14_growth_curves_mngtonly.RData")
+
 
 plot_summary = new_data_filtered %>% 
   group_by(t, mngt_type) %>%
   summarise(
     h_median = median(hpred, na.rm = TRUE),
     h_mean = mean(hpred, na.rm=TRUE),
-    # h_lower = mean(h_pred, na.rm = TRUE),
-    # h_upper = mean(h_pred, na.rm = TRUE),
     .groups = "drop"
   )%>%
   mutate(
@@ -896,7 +917,7 @@ ggsave("03_work/results/growth_curves_mngt_distributions_sub_asymlaplace.tif", p
 
 
 
-###--- calculate IQR per management type for the different time steps (and overall) ---###
+###--- calculate IQR per management type for the different time steps (and overall) ---
 
 variation_summary <- new_data_filtered %>%
   filter(t<91) %>% # only include until 90, as growth curve flattens of and I display data until this timestep
@@ -924,11 +945,11 @@ variation_summary_overall <- variation_summary %>%
 # --------------------------------------------------------
 
 h_recovery <- 5 # recovery threshold 5 m
-  #h_recovery <- 10
-    #h_recovery <- 15
+
 
 posterior_g_mngt$.draw <- 1:nrow(posterior_g_mngt)
 posterior_hOffset_mngt$.draw <- 1:nrow(posterior_hOffset_mngt)
+
 
 
 posterior_hmaxstar_mngt <- posterior_samples %>%
@@ -944,7 +965,9 @@ posterior_hmaxstar_mngt <- posterior_samples %>%
     mngt_type = recode(mngt_type, !!!mngt_labels)
   )
 
+
 posterior_hmaxstar_mngt$.draw <- 1:nrow(posterior_hmaxstar_mngt)
+
 
 posterior_contrib_mngt <- posterior_g_mngt %>%
   left_join(posterior_hOffset_mngt, by = c(".draw", "mngt_type")) %>%
@@ -960,6 +983,7 @@ posterior_contrib_mngt <- posterior_g_mngt %>%
 
 
 # when hOffset > h_recovery, that set it's contribution = 1, growth contribution = 0 & t_recovery = 0
+
 posterior_contrib_mngt$hOffset_contrib = ifelse(posterior_contrib_mngt$hOffset >= h_recovery, 1 , posterior_contrib_mngt$hOffset_contrib)
 posterior_contrib_mngt$growth_contrib = ifelse(posterior_contrib_mngt$hOffset >= h_recovery, 0 , posterior_contrib_mngt$growth_contrib)
 posterior_contrib_mngt$t_recovery = ifelse(posterior_contrib_mngt$hOffset >= h_recovery, 0 , posterior_contrib_mngt$t_recovery)
@@ -968,6 +992,7 @@ posterior_contrib_mngt$t_recovery = ifelse(posterior_contrib_mngt$hOffset >= h_r
 posterior_contrib_mngt_long <- posterior_contrib_mngt %>%
   pivot_longer(cols = c("hOffset_contrib", "growth_contrib"),
                names_to = "component", values_to = "proportion")
+
 
 # mean & median contributions
 
@@ -993,13 +1018,16 @@ posterior_contrib_mngt_medians <- posterior_contrib_mngt %>%
 # --- combined plot ---
 
 # Reorder based on median recovery time
+
 mngt_order <- posterior_contrib_mngt %>%
   group_by(mngt_type) %>%
   summarise(median_t_recovery = median(t_recovery, na.rm = TRUE)) %>%
   arrange(median_t_recovery) %>%
   pull(mngt_type)
 
+
 # Apply factor levels based on order
+
 posterior_contrib_mngt$mngt_type <- factor(posterior_contrib_mngt$mngt_type, levels = mngt_order)
 posterior_contrib_mngt_medians$mngt_type <- factor(posterior_contrib_mngt_medians$mngt_type, levels = mngt_order)
 posterior_contrib_mngt_long$mngt_type <- factor(posterior_contrib_mngt_long$mngt_type, levels = mngt_order)
@@ -1034,6 +1062,7 @@ recov_time_mngt
 
 posterior_contrib_mngt_medians = posterior_contrib_mngt_medians %>%
   mutate(median_proportion = median_proportion * 100)
+
 
 # contribution plot
 
@@ -1167,5 +1196,3 @@ if (!is.null(vc_cor)) tab_df(vc_cor, title = "Random-effects correlations (VarCo
 
 
 ################################################ END
-
-

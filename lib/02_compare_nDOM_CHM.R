@@ -47,9 +47,9 @@ library(patchwork)
 library(cowplot)
 
 
-
 # --- set working directory 
-setwd("E:/Projects/ForestRecovery")
+
+setwd("~/NAS/Projects/ForestRecovery/")
 
 
 ######################################
@@ -63,6 +63,7 @@ forest_type <- rast("02_dataRaw/bdg_environment/forest_type2020_reclass_1m.tif")
 gaps <- rast("02_dataRaw/gaps_bdg/berchtesgaden_2021_chm_1m_patchid_cn2cr2_mmu400n8_filtered_woheight.tif")
 closed_forest <- vect("02_dataRaw/bdg_environment/closed_forest.gpkg")
 
+
 # get gap size for stratified sampling on raster level
 
 gaps.df <- terra::as.data.frame(gaps, na.rm = TRUE)
@@ -74,11 +75,12 @@ gaps.reclass <- gaps.df %>%
   count() %>%
   mutate(category = cut(n,
                         breaks = c(0, 500, 1000, 5000, 20000, Inf),
-                        #labels = c("0-500", "500-1000", "1000-5000", "5000-20000", ">20000"),
                         labels = c(1, 2, 3, 4, 5),
                         right = FALSE))
+
   
 # Create a reclassification matrix
+
 reclass_matrix <- gaps.reclass %>% 
   select(gap_ID, category) %>%
   mutate(
@@ -88,45 +90,54 @@ reclass_matrix <- gaps.reclass %>%
   distinct() %>%
   as.matrix()
   
+
 # reclassify gaps into size categories
+
 gap_size <- classify(gaps, rcl = reclass_matrix, right = FALSE) 
 
 writeRaster(gap_size, "03_work/data_processed/nDOM_CHM_comp/gap_size_2021.tif")
 
 
 # Stack the layers
+
 layers_stack <- c(elevation, forest_type, gap_size)
 names(layers_stack) <- c("elevation", "ftype", "gap_size")
 
+
 # mask stack to forest area
+
 layers_stack_forest <- mask(layers_stack, closed_forest)
 
 # Extract values and create a data frame
+
 values <- terra::as.data.frame(layers_stack_forest, xy=TRUE)
 
 # filter rows with only NAs
+
 values <- values[rowSums(is.na(values)) != ncol(values), ]
 
 saveRDS(values, "03_work/data_processed/nDOM_CHM_comp/stratification_df.rds")
 
-# Remove NA values
-#values <- na.omit(values)
 
 # Define the number of samples per stratum
+
 samples_per_stratum <- 20  # Adjust as needed
 
 # Stratified sampling
+
 set.seed(123)  # Set seed for reproducibility
 sampled_points <- values %>%
   group_by(elevation, ftype, gap_size) %>%
   sample_n(samples_per_stratum, replace = TRUE) %>%
   ungroup()
 
-# Convert the dataframe to a SpatVector (points)
+# Convert the data frame to points
+
 spatial_points <- vect(sampled_points, geom=c("x", "y"), crs = crs(elevation))
 writeVector(spatial_points, "03_work/data_processed/nDOM_CHM_comp/stratification_points.gpkg")
 
 # Plot the points
+
 plot(elevation)
 points(spatial_points, col = 'red', pch = 16)
 
@@ -159,6 +170,7 @@ nDOM_values <- as.data.frame(extract(nDOM_clamped, spatial_points, bind=TRUE, xy
 nDOM_z <- nDOM_values[,"Band_1"]
 
 # create the comparison dataframe:
+
 comparison_df1 <- cbind(CHM_values, nDOM_z)
 
 nDOM_values <- nDOM_values %>%
@@ -233,11 +245,11 @@ comparison_df1$diff_category <- ifelse(comparison_df1$diff < -4, 1,
 points_comparison <- vect(comparison_df1, geom=c("x", "y"), crs="EPSG:25832")
 writeVector(points_comparison, "03_work/data_processed/nDOM_CHM_comp/points_comparison.gpkg", overwrite=T)
 
-# saveRDS(comparison_df1, "03_work/data_processed/nDOM_CHM_comp/comparison_df1_forest.rds")
-# saveRDS(comparison_df2, "03_work/data_processed/nDOM_CHM_comp/comparison_df2_forest.rds")
+saveRDS(comparison_df1, "03_work/data_processed/nDOM_CHM_comp/comparison_df1_forest.rds")
+saveRDS(comparison_df2, "03_work/data_processed/nDOM_CHM_comp/comparison_df2_forest.rds")
 
-comparison_df1 <- readRDS("03_work/data_processed/nDOM_CHM_comp/comparison_df1.rds")
-comparison_df2 <- readRDS("03_work/data_processed/nDOM_CHM_comp/comparison_df2.rds")
+# comparison_df1 <- readRDS("03_work/data_processed/nDOM_CHM_comp/comparison_df1.rds")
+# comparison_df2 <- readRDS("03_work/data_processed/nDOM_CHM_comp/comparison_df2.rds")
 
 
 ##########################################
@@ -248,21 +260,23 @@ comparison_df2 <- readRDS("03_work/data_processed/nDOM_CHM_comp/comparison_df2.r
 # -- sort levels
 
 # Define the desired order for gap_size and elevation
+
 gap_size_levels <- c("<0.05 ha", "0.05 - 0.1 ha", "0.01 - 0.5 ha", "0.5 - 2 ha", ">2 ha")
 elevation_levels <- c("600-800", "800-1000", "1000-1200", "1200-1400", "1400-1600", "1600-1800", "> 1800")
 
 # Set the levels for gap_size and elevation
+
 comparison_df1$gap_size <- factor(comparison_df1$gap_size, levels = gap_size_levels)
 comparison_df1$elevation <- factor(comparison_df1$elevation, levels = elevation_levels)
 
 comparison_df2$gap_size <- factor(comparison_df2$gap_size, levels = gap_size_levels)
 comparison_df2$elevation <- factor(comparison_df2$elevation, levels = elevation_levels)
 
-# Error metrics
+# --- Error metrics
 
 # Mean Absolute Error (MAE) - less sensitive to outliers
-MAE <- mean(na.omit(abs(comparison_df1$Z - comparison_df1$nDOM_z)))
-# 1.811365 
+
+MAE <- mean(na.omit(abs(comparison_df1$Z - comparison_df1$nDOM_z))) # 1.811365 
 
 MAE_gap.size <- comparison_df1 %>% group_by(gap_size) %>%
   summarize(MAE_mean = mean(na.omit(abs(Z - nDOM_z))),
@@ -277,8 +291,8 @@ MAE_ftype <- comparison_df1 %>% group_by(ftype) %>%
             MAE_median = median(na.omit(abs(Z - nDOM_z))))
 
 # Root Mean Squared Error (RMSE) - penalizing larger errors
-RMSE <- sqrt(mean(na.omit((comparison_df1$Z - comparison_df1$nDOM_z))^2))
-# 3.987143
+
+RMSE <- sqrt(mean(na.omit((comparison_df1$Z - comparison_df1$nDOM_z))^2))# 3.987143
 
 RMSE_gap.size <- comparison_df1 %>% group_by(gap_size) %>% 
   summarize(RMSE_mean = sqrt(mean(na.omit((Z - nDOM_z)^2))))
@@ -293,16 +307,18 @@ RMSE_gap.elevation <- comparison_df1 %>% group_by(elevation) %>%
 lab_overall <- sprintf("MAE = %.2f\nRMSE = %.2f", MAE, RMSE)
 
 # Per gap size
+
 lab_gap <- MAE_gap.size %>%
   left_join(RMSE_gap.size, by = "gap_size") %>%
   transmute(
     gap_size,
     label = sprintf("MAE = %.2f\nRMSE = %.2f", MAE_mean, RMSE_mean),
-    x = 0.5,  # position inside your [0,9] limits
+    x = 0.5,  
     y = 8.5
   )
 
 # Per elevation
+
 lab_elev <- MAE_elevation %>%
   left_join(RMSE_gap.elevation, by = "elevation") %>%
   transmute(
@@ -323,11 +339,12 @@ lab_ftype <- MAE_ftype %>%
   transmute(
     ftype,
     label = sprintf("MAE = %.2f\nRMSE = %.2f", MAE_mean, RMSE_mean),
-    x = 1,    # first box's x position
-    y = 19    # near top of your ylim(0,20)
+    x = 1,    
+    y = 19   
   )
 
 # For boxplots faceted by elevation/gap_size you can reuse lab_elev and lab_gap:
+
 lab_elev_box <- lab_elev %>% mutate(x = 1, y = 19)
 lab_gap_box  <- lab_gap  %>% mutate(x = 1, y = 19)
 
@@ -336,6 +353,7 @@ lab_gap_box  <- lab_gap  %>% mutate(x = 1, y = 19)
 # --- plots: --- 
 
 # reverse labels for intuitive display
+
 comparison_df1 <- comparison_df1 %>%
   mutate(
     elevation_plot = factor(elevation, levels = rev(elevation_levels)),
@@ -350,6 +368,7 @@ lab_gap <- lab_gap %>%
 
 
 # --- 1) top: full-width simple scatter with overall MAE/RMSE ---
+
 scatter_top <- ggplot(comparison_df1, aes(x = nDOM_z , y = Z)) +
   geom_point(size = 2, alpha = 0.5) +
   geom_abline(slope = 1, intercept = 0, color = "red") +
@@ -361,6 +380,7 @@ scatter_top <- ggplot(comparison_df1, aes(x = nDOM_z , y = Z)) +
   annotate("text", x = 0.5, y = 9, label = lab_overall, hjust = 0, vjust = 1)
 
 # --- 2) left column: elevation (vertical stack; highest on top) ---
+
 scatter_elevation_col <- ggplot(comparison_df1, aes(x = nDOM_z , y = Z)) +
   geom_point(size = 2, alpha = 0.5) +
   geom_abline(slope = 1, intercept = 0, color = "red") +
@@ -376,6 +396,7 @@ scatter_elevation_col <- ggplot(comparison_df1, aes(x = nDOM_z , y = Z)) +
   theme(plot.title = element_text(hjust = 0.5, face = "bold"))
 
 # --- 3) right column: gap size (vertical stack; largest on top) ---
+
 scatter_gapsize_col <- ggplot(comparison_df1, aes(x = nDOM_z , y = Z)) +
   geom_point(size = 2, alpha = 0.5) +
   geom_abline(slope = 1, intercept = 0, color = "red") +
@@ -398,7 +419,7 @@ right_header <- ggdraw() + draw_label("Per gap size",     fontface = "bold", x =
 scatter_plot_all <- scatter_top /
   (left_header | right_header) /
   (scatter_elevation_col | scatter_gapsize_col) +
-  plot_layout(heights = c(1, 0.08, 2))  # tweak the middle height as needed
+  plot_layout(heights = c(1, 0.08, 2))  
 
 scatter_plot_all
 
@@ -406,6 +427,7 @@ scatter_plot_all
 # --- Boxplots for direct data comparison ---
 
 # per elevation
+
 box_elev <- ggplot(comparison_df2, aes(x = type, y = Z, fill = type)) +
   geom_boxplot() +
   facet_grid(~elevation) +
@@ -414,12 +436,13 @@ box_elev <- ggplot(comparison_df2, aes(x = type, y = Z, fill = type)) +
   theme_minimal() +
   scale_fill_brewer(palette = "Set3") +
   theme(axis.text.x = element_blank())+
-  ylim(0, 20) +# 35 values > 20 m
+  ylim(0, 20) +  # 35 values > 20 m
   geom_text(data = lab_elev_box, aes(x = x, y = y, label = label),
             inherit.aes = FALSE, hjust = 0, vjust = 1, size = 2.2)+ 
   ggtitle("Per elevation bin")
 
 # per forest type
+
 box_ftype <- ggplot(comparison_df2, aes(x = type, y = Z, fill = type)) +
   geom_boxplot() +
   facet_grid(~ftype) +
@@ -434,6 +457,7 @@ box_ftype <- ggplot(comparison_df2, aes(x = type, y = Z, fill = type)) +
   ggtitle("Per forest type")
 
 # per gap size
+
 box_gapsize <- ggplot(comparison_df2, aes(x = type, y = Z, fill = type)) +
   geom_boxplot() +
   facet_grid(~gap_size) +
@@ -456,7 +480,7 @@ comparisons_heights_all <- (box_elev / box_ftype / box_gapsize) +
 comparisons_heights_all
 
 
-# Define the output directory
+# defineoutput directory
 output_dir <- "03_work/analysis/comparison_photoDOM_lidarCHM/results/"
 
 # Save plots
