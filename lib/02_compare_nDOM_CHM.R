@@ -149,6 +149,9 @@ points(spatial_points, col = 'red', pch = 16)
 # nDOM: German shortcut for "normalisiertes Digitales Oberhöhen-Modell" (CHM in English) - from areal images
 # CHM: Canopy height model derived from lidar data
 
+# the CHM layer from Berchtesgaden needs to be requested from the Berchtesgaden National Park Research division
+# the nDOM for Berchtesgaden can be obtained from the Agency for Digitisation, High-Speed Internet and Surveying via the Open data Portal (https://geodaten.bayern.de/opengeodata/)
+
 nDOM <- rast("03_work/data_processed/CHM/bdg/20/nDOM_20.tif")
 CHM <- rast("E:/Projects/GapDynamics/data/processed/CHM_data/lidar/2021/berchtesgaden_2021_chm.tif")
 
