@@ -5,7 +5,7 @@ Analysis of recovery of forest height post disturbance in Bavaria
 # Understanding the managament impact on forest height recovery dynamics in Central Europe 
 This repository holds code for running the analysis that integrates a biologically grounded theoretical model of forest growth with remotely sensed canopy height data and a forest disturbance map to better understand post-disturbance forest canopy recovery. For a detailed description of the purpose, methodology, and results, see the following paper:
 
-Krüger, K., Fischer, F.J., Stritih, A., Klemmt3. H.J., Seidl, R. (2026). Managing the future: Post-disturbance forest recovery across management types in Central Europe. Submitted to Forest Ecology and Management.
+Krüger, K., Fischer, F.J., Stritih, A., Klemmt. H.J., Seidl, R. (2026). Managing the future: Post-disturbance forest recovery across management types in Central Europe. Submitted to Forest Ecology and Management.
 
 The data required to reproduce the analysis can be obtained via the following link: placeholder for the link
 
