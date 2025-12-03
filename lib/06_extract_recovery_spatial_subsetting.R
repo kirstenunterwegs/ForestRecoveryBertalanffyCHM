@@ -329,9 +329,31 @@ if (length(error_logs) > 0) {
 
 #remove(recovery.dt) 
 
-# --------------------------------------------------
-# Aggregate recovery dt to Landsat pixel resolution 
-# --------------------------------------------------
+
+# %%%%%%%%%%%%%%%%%%% NOTE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#
+# Within the data repository we provide a version of the full recovery.dt, 
+# but without x,y coordinates as we are not allowed to share spatially 
+# explicit forest ownership data.
+# But you can reproduce the filtering and subsetting steps which follow 
+# without the coordinates.
+#
+# We provide the spatial subsets produced later on within the repository.
+#
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+# --- data table provided in the repository: 
+recovery.dt <- recovery.dt[, !c("x", "y")]
+save(recovery.dt, file = "03_work/data_processed/analysis.dt/recovery_all.dt_noXY.RData")
+# ---
+
+# ---- this is a very large data table, it takes several minutes to load! -----
+
+load("03_work/data_processed/analysis.dt/recovery_all.dt_noXY.RData")
+
+# ---------------------------------------------------------------------
+# Aggregate recovery dt to Landsat pixel resolution of disturbance map
+# ---------------------------------------------------------------------
 
 #error_log_dt <- read.csv("03_work/data_processed/analysis.dt/recovery_all_errors.csv")
 #load("03_work/data_processed/analysis.dt/recovery_all.dt.RData")
@@ -656,8 +678,6 @@ dt_sev0.75_sampled %>% group_by(mngt_type) %>% count()
 
 
 saveRDS(dt_sev0.75_sampled, "03_work/data_processed/analysis.dt/spatial_sub250.rds")
-#saveRDS(dt_sev0.75_sampled, "03_work/data_processed/analysis.dt/spatial_sub250_v2.rds") # different spatial subset for robustness checks
-#saveRDS(dt_sev0.75_sampled, "03_work/data_processed/analysis.dt/spatial_sub250_v1.2.rds") # different spatial subset for robustness checks
 
 
 # -------------------------------------------------
