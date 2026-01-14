@@ -19,15 +19,15 @@ software used for development and implementation : R version 4.3.3
 Scripts are named in order (1_, etc.). 
 
 - `01_synthetic_fit_bertalanffy`: Synthetic growth-model test; Checks whether the Bertalanffy model can reliably separate growth rate (g) and disturbance legacy (hOffset) using synthetic height data with noise.
-- `02_compare_nDOM_CHM`: CHM vs. nDOM height comparison; Compares LiDAR-CHM and photogrammetric nDOM height estimates across forest types, elevation bins, and gap sizes using 2,400 paired samples.
+- `02_compare_nDOM_CHM`: CHM vs. nDOM height comparison; Compares LiDAR-CHM and photogrammetric nDOM height estimates across forest types, elevation bins, and gap sizes.
 - `03_filter_disturbance_patches`: Disturbance-patch preparation; Merges, filters, and masks disturbance patches across Bavaria, removes harvest disturbances and unsuitable areas, and generates patch polygons and buffer layers.
 - `04_extract.chm_patch`: CHM extraction per disturbance patch;  Identifies and loads CHM tiles, masks them to disturbance patches and buffers, and extracts annual canopy height layers for all patches in 2017–2023.
 - `05_prepare_auxiliary_data`: Prepares ownership, management, topography, climate, and soil layers needed for later CHM extraction and modelling.
 - `06_extract_recovery_spatial_subsetting`: Extracts CHM height trajectories, links them with environmental/management data, aggregates to Landsat scale, cleans data, filters severity, and creates modelling subsets. 
 - `07.1_model_fit_asym_laplace_full`: Fits the main hierarchical Bayesian canopy-height recovery models (brms).
 - `07.2_model_fit_student_full`: Fits the main hierarchical Bayesian canopy-height recovery models (brms) with a student error distribution.
-- `07.07.3_model_fit_asym_laplace_sub500`: Fits the main hierarchical Bayesian canopy-height recovery models (brms) with a different spatial subset on a 500 m grid.
-- `07.07.4_model_fit_asym_laplace_sub1000`: Fits the main hierarchical Bayesian canopy-height recovery models (brms) with a different spatial subset on a 1000 m grid.
+- `07.3_model_fit_asym_laplace_sub500`: Fits the main hierarchical Bayesian canopy-height recovery models (brms) with a different spatial subset on a 500 m grid.
+- `07.4_model_fit_asym_laplace_sub1000`: Fits the main hierarchical Bayesian canopy-height recovery models (brms) with a different spatial subset on a 1000 m grid.
 - `08_validation`: Validates model predictions by comparing early- vs. late-year CHM heights for the same pixels; computes R², RMSE, bias, and produces diagnostic plots.
 - `09_model_analysis`: Summarises fixed/random effects, visualises posterior distributions, simulates growth curves, compares management types, and exports tables/plots.
 - `10_map_samples_CHMS`: Builds study-region maps, sample distributions, and example CHM panels to create overview figure.
