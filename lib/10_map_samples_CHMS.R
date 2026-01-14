@@ -165,37 +165,72 @@ obs_points_jitter$y_jit = obs_points_jitter$Y + rnorm(nrow(obs_points_jitter), m
 
 # --- plot main map  ---
 
-sample_plot = ggplot() +
+# sample_plot = ggplot() +
+#   
+#   # Bavaria highlight
+#   geom_sf(data = bavaria, fill= NA, color = "black", alpha = 0.5) +
+#   
+#   # Observation points colored by management type
+#   geom_point(data = obs_points_jitter, aes(x = x_jit, y = y_jit, color = mngt_type), size = 0.6) +
+#   #geom_sf(data = obs_points, aes(color = mngt_type), size = 0.3) +
+#   scale_color_manual(values = mngt_colors, name = "Management type") +
+#   
+#   # Add CHM inset points
+#   geom_sf(data = centroids, color = "white", fill = "lightblue", shape = 21, size = 12, alpha = 0.7) +
+#   geom_sf(data = centroids, color = "grey60", fill = "darkblue", shape = 21, size = 8, alpha = 1) +
+#   geom_sf_text(data = centroids, aes(label = label), fontface = "bold", size = 4 , color = "white") + #,nudge_x = 5000, nudge_y = 5000
+#   # scale
+#   annotation_scale(location = "bl", width_hint = 0.5) +
+#   # Zoom to Bavaria area
+#   coord_sf(
+#     xlim = c(bbox["xmin"] - padding_x, bbox["xmax"] + padding_x),
+#     ylim = c(bbox["ymin"] - padding_y, bbox["ymax"] + padding_y)
+#   ) +
+#   theme_void() +
+#   theme(
+#     legend.position = c(0, 0.35),   # Middle-left inside plot
+#     legend.justification = c(0, 0.5), 
+#     legend.background = element_rect(fill = alpha("white", 0.7), color = NA)  # Optional: semi-transparent legend background
+#   ) +
+#   guides(color = guide_legend(override.aes = list(size = 4))) 
+# sample_plot
 
-  # Bavaria highlight
+#------------------ set aside on top
+
+sample_plot = ggplot() +
   geom_sf(data = bavaria, fill= NA, color = "black", alpha = 0.5) +
   
-  # Observation points colored by management type
-  geom_point(data = obs_points_jitter, aes(x = x_jit, y = y_jit, color = mngt_type), size = 0.6) +
-  #geom_sf(data = obs_points, aes(color = mngt_type), size = 0.3) +
+  geom_point(
+    data = subset(obs_points_jitter, mngt_type != "Set aside"),
+    aes(x = x_jit, y = y_jit, color = mngt_type),
+    size = 0.6
+  ) +
+  geom_point(
+    data = subset(obs_points_jitter, mngt_type == "Set aside"),
+    aes(x = x_jit, y = y_jit, color = mngt_type),
+    size = 0.9
+  ) +
+  
   scale_color_manual(values = mngt_colors, name = "Management type") +
   
-  # Add CHM inset points
   geom_sf(data = centroids, color = "white", fill = "lightblue", shape = 21, size = 12, alpha = 0.7) +
   geom_sf(data = centroids, color = "grey60", fill = "darkblue", shape = 21, size = 8, alpha = 1) +
-  geom_sf_text(data = centroids, aes(label = label), fontface = "bold", size = 4 , color = "white") + #,nudge_x = 5000, nudge_y = 5000
-  # scale
+  geom_sf_text(data = centroids, aes(label = label), fontface = "bold", size = 4 , color = "white") +
   annotation_scale(location = "bl", width_hint = 0.5) +
-  # Zoom to Bavaria area
   coord_sf(
     xlim = c(bbox["xmin"] - padding_x, bbox["xmax"] + padding_x),
     ylim = c(bbox["ymin"] - padding_y, bbox["ymax"] + padding_y)
   ) +
   theme_void() +
   theme(
-    legend.position = c(0, 0.35),   # Middle-left inside plot
-    legend.justification = c(0, 0.5), 
-    legend.background = element_rect(fill = alpha("white", 0.7), color = NA)  # Optional: semi-transparent legend background
+    legend.position = c(0, 0.35),
+    legend.justification = c(0, 0.5),
+    legend.background = element_rect(fill = alpha("white", 0.7), color = NA)
   ) +
-  guides(color = guide_legend(override.aes = list(size = 4))) 
+  guides(color = guide_legend(override.aes = list(size = 4)))
 sample_plot
 
-
+#-------------------
 
 chm_3_df <- as.data.frame(chm_3, xy = TRUE)
 chm_15_df <- as.data.frame(chm_15, xy = TRUE)
@@ -258,40 +293,40 @@ p_chm3
 # --------- CHM 15 Plot with Label
 # small private forest - beech 15 years post disturbance
 
-  center_x <- 768880
-  center_y <- 5294840
-  
-  # Define zoom extent (50 meters in each direction)
-  x_min <- center_x - 50
-  x_max <- center_x + 50
-  y_min <- center_y - 50
-  y_max <- center_y + 50
-  
-  # Define padding from edges (adjust as needed)
-  padding_x <- 5
-  padding_y <- 5
-  
-  # Position label slightly inside top-left corner
-  label_x <- x_min + padding_x
-  label_y <- y_max - padding_y
-  
-  # Update ggplot with zoom window
-  
-  p_chm15 <- ggplot() +
-    geom_raster(data = chm_15_df, aes(x = x, y = y, fill = height)) +
-    scale_fill_viridis_c(option = "D", limits = c(min_height, max_height)) +
-    labs(fill = "Height [m]") +   # <-- legend title
-    annotate("text", x = label_x, y = label_y, label = "B", size = 8, fontface = "bold", hjust = 0, vjust = 1, color = "white") +
-    coord_sf(xlim = c(x_min, x_max), ylim = c(y_min, y_max)) +
-    theme_void()
-  
-  p_chm15
-  
-  
+center_x <- 768880
+center_y <- 5294840
+
+# Define zoom extent (50 meters in each direction)
+x_min <- center_x - 50
+x_max <- center_x + 50
+y_min <- center_y - 50
+y_max <- center_y + 50
+
+# Define padding from edges (adjust as needed)
+padding_x <- 5
+padding_y <- 5
+
+# Position label slightly inside top-left corner
+label_x <- x_min + padding_x
+label_y <- y_max - padding_y
+
+# Update ggplot with zoom window
+
+p_chm15 <- ggplot() +
+  geom_raster(data = chm_15_df, aes(x = x, y = y, fill = height)) +
+  scale_fill_viridis_c(option = "D", limits = c(min_height, max_height)) +
+  labs(fill = "Height [m]") +   # <-- legend title
+  annotate("text", x = label_x, y = label_y, label = "B", size = 8, fontface = "bold", hjust = 0, vjust = 1, color = "white") +
+  coord_sf(xlim = c(x_min, x_max), ylim = c(y_min, y_max)) +
+  theme_void()
+
+p_chm15
+
+
 # --------- CHM 30 Plot with Label
 # large private forest - spruce 30 years post disturbance
-  
-  
+
+
 center_x <- 652450
 center_y <- 5342300
 
@@ -326,7 +361,7 @@ p_chm30
 
 
 # -- sort CHM plots
- 
+
 p_chm3_legend <- p_chm3 + 
   theme(legend.position = "none",
         panel.border = element_rect(color = "grey60", fill = NA, size = 1))
