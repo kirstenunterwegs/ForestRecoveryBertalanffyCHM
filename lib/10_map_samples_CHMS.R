@@ -47,7 +47,7 @@ library(cowplot)
 
 # set directory
 
-setwd("~/NAS/Projects/ForestRecovery/")
+setwd("~/data") # or how you name your directory
 
 
 

@@ -48,8 +48,7 @@ library(sf)
 
 # set directory
 
-setwd("~/NAS/Projects/ForestRecovery/")
-
+setwd("~/data") # or how you name your directory
 
 ################################################################
 # --- load and merge disturbance patches into one layer ---

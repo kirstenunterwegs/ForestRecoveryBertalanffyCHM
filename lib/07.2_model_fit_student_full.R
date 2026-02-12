@@ -13,7 +13,7 @@ suppressPackageStartupMessages(library(stringr))
 
 ###### set dir
 
-setwd("~/NAS/Projects/ForestRecovery/")
+setwd("~/data") # or how you name your directory
 
 # path = dirname(rstudioapi::getSourceEditorContext()$path)
 # setwd(path)
