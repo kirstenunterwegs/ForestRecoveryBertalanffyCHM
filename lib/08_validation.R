@@ -168,8 +168,8 @@ hist(recovery_landsat_filtered_sev_firstyr$aspect_std)
 hist(recovery_landsat_filtered_sev_firstyr_fitted$elevation_std)
 hist(recovery_landsat_filtered_sev_firstyr$elevation_std)
 
-hist(recovery_landsat_filtered_sev_firstyr_fitted$logt)
-hist(recovery_landsat_filtered_sev_firstyr$logt)
+hist(recovery_landsat_filtered_sev_firstyr_fitted$log10t)
+hist(recovery_landsat_filtered_sev_firstyr$log10t)
 
 # check categorical layers 
 
@@ -182,6 +182,8 @@ recovery_landsat_filtered_sev_firstyr[,.N,mngt_type]
 setorder(recovery_landsat_filtered_sev_firstyr_fitted, species)
 recovery_landsat_filtered_sev_firstyr_fitted[,.N, species]
 
+setorder(recovery_landsat_filtered_sev_firstyr, species)
+recovery_landsat_filtered_sev_firstyr[,.N, species]
 
 #-------------------------------------------------------------------
 # Load, standardize and compare original data with validation data
@@ -276,13 +278,13 @@ hist(recovery_landsat_filtered_sev_lastyr$aspect_std)
 
 # check categorical layers 
 
-setorder(recovery_landsat_filtered_sev_firstyr_fitted, mngt_type)
+setorder(recovery_landsat_filtered_sev_firstyr, mngt_type)
 recovery_landsat_filtered_sev_firstyr_fitted[,.N,mngt_type]
 
 setorder(recovery_landsat_filtered_sev_lastyr, mngt_type)
 recovery_landsat_filtered_sev_lastyr[,.N,mngt_type]
 
-setorder(recovery_landsat_filtered_sev_firstyr_fitted, species)
+setorder(recovery_landsat_filtered_sev_firstyr, species)
 recovery_landsat_filtered_sev_firstyr_fitted[,.N, species]
 
 setorder(recovery_landsat_filtered_sev_lastyr, species)
@@ -331,7 +333,6 @@ chunks = unique(olddata$chunk)  # assuming newdata and olddata are aligned
 
 # Allocate space for posterior differences
 
-dh_pred = vector(mode = "list",length = length(chunks))
 hpred1 = vector(mode = "list",length = length(chunks))
 hpred2 = vector(mode = "list",length = length(chunks))
 
@@ -348,38 +349,23 @@ for(i in seq_along(chunks)){
   stopifnot(nrow(olddata_current) == nrow(newdata_current))
   
   # Get posterior linear predictions for asymmetric Laplace model (linpred can account for asymmetry in model prediction)
-  hpred_old = posterior_linpred(fit, newdata = olddata_current, re_formula = NULL) 
+  hpred_old = posterior_linpred(fit, newdata = olddata_current, re_formula = NULL) #NA to remove random effects
   hpred_new = posterior_linpred(fit, newdata = newdata_current, re_formula = NULL)
   
   # Get posterior predictions for student model with epred
   # hpred_old = posterior_epred(fit, newdata = olddata_current, re_formula = NULL) 
   # hpred_new = posterior_epred(fit, newdata = newdata_current, re_formula = NULL)
   
-  dh_pred_current = numeric(ncol(hpred_old))
-  for (j in seq_len(ncol(hpred_old))) {
-    sort_old = sort(hpred_old[, j])
-    sort_new = sort(hpred_new[, j])
-    
-    dh_vec = sort_new - sort_old
-    dh_pred_current[j] = mean(dh_vec)
-  }
-  
-  # Compute posterior difference BEFORE aggregation
-  dh_pred_current = hpred_new - hpred_old  
-  dh_pred_current = colMeans(dh_pred_current)
   
   hpred_old = colMeans(hpred_old)
   hpred_new = colMeans(hpred_new)
   
-  dh_pred[[i]] = dh_pred_current
   hpred1[[i]] = hpred_old
   hpred2[[i]] = hpred_new
 }
 
-dh_pred = unlist(dh_pred)
 hpred1 = unlist(hpred1)
 hpred2 = unlist(hpred2)
-
 
 recovery_landsat_filtered_sev_firstyr$hpred1 = hpred1
 recovery_landsat_filtered_sev_lastyr$hpred2 = hpred2
@@ -412,19 +398,19 @@ validation_berta[
   )
 ]
 
-validation_berta$dh_pred = dh_pred # height growth difference where whole posterior draws are substracted from each other
 
 # --- save validation dt
 save(validation_berta, file = "03_work/analysis/validation/validation_berta_dt_asyml_27_reNULL.RData")
 #save(validation_berta, file = "03_work/analysis/validation/validation_berta_dt_student14_reNULL.RData")
 # ----
 
+#load("03_work/analysis/validation/validation_berta_dt_asyml_27_reNULL.RData")
 
 
 # --- raw validation ---
 
 (
-  gval = ggplot(validation_berta, aes(x = dh_pred, y = dh_emp)) +
+  gval = ggplot(validation_berta, aes(x = dh_pred_agg, y = dh_emp)) +
     geom_point(alpha = 0.1, size = 0.1) +
     geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
     geom_smooth(method = "lm") +
@@ -434,17 +420,16 @@ save(validation_berta, file = "03_work/analysis/validation/validation_berta_dt_a
 )
 
 
-
 # --- stats ----
 
 # overall
 
 validation_berta[ 
   , list(
-    growth = mean(dh_pred)
-    , r2 = round(cor(dh_pred, dh_emp)^2,2)
-    , rmse = round(sqrt(mean((dh_pred - dh_emp)^2)),3)
-    , me = round(mean(dh_pred - dh_emp),3) # bias
+    growth = mean(dh_pred_agg)
+    , r2 = round(cor(dh_pred_agg, dh_emp)^2,2)
+    , rmse = round(sqrt(mean((dh_pred_agg - dh_emp)^2)),3)
+    , me = round(mean(dh_pred_agg - dh_emp),3) # bias
   )
 ]
 
@@ -452,27 +437,17 @@ validation_berta[
 
 validation_berta[
   , list(
-    growth = mean(dh_pred)
-    , r2 = round(cor(dh_pred, dh_emp)^2,2)
-    , rmse = round(sqrt(mean((dh_pred - dh_emp)^2)),3)
-    , me = round(mean(dh_pred - dh_emp),3) # bias
+    growth = mean(dh_pred_agg)
+    , r2 = round(cor(dh_pred_agg, dh_emp)^2,2)
+    , rmse = round(sqrt(mean((dh_pred_agg - dh_emp)^2)),3)
+    , me = round(mean(dh_pred_agg - dh_emp),3) # bias
   )
   , mngt_type
 ]
 
 
 # validation only for expected large positive growth and without disturbances
-
 validation_berta_growthstrict = validation_berta[dt >= 4]
-(
-  gval_growthstrict = ggplot(validation_berta_growthstrict, aes(x = dh_pred, y = dh_emp)) +
-    geom_point(alpha = 0.1, size = 0.1) +
-    geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
-    geom_smooth(method = "lm") +
-    labs(x = "Predicted delta Height growth", y = "Observed delta Height growth", 
-         title = "Predicted vs Observed Height growth (only growth >= 4 years)") +
-    theme_classic() #+ xlim(c(-45,25)) + ylim(c(-45,25))
-)
 
 (
   gval_growthstrict = ggplot(validation_berta_growthstrict, aes(x = dh_pred_agg, y = dh_emp)) +
@@ -504,10 +479,10 @@ ggplot(data = validation_berta_growthstrict, aes(x = dh_pred_agg, y = dh_emp)) +
 
 validation_berta_growthstrict[
   , list(
-    growth = mean(dh_pred)
-    , r2 = round(cor(dh_pred, dh_emp)^2,2)
-    , rmse = round(sqrt(mean((dh_pred - dh_emp)^2)),3)
-    , me = round(mean(dh_pred - dh_emp),3) # bias
+    growth = mean(dh_pred_agg)
+    , r2 = round(cor(dh_pred_agg, dh_pred_agg)^2,2)
+    , rmse = round(sqrt(mean((dh_pred_agg - dh_emp)^2)),3)
+    , me = round(mean(dh_pred_agg - dh_emp),3) # bias
   )
 ]
 
@@ -515,10 +490,10 @@ validation_berta_growthstrict[
 
 validation_berta_growthstrict[
   , list(
-    growth = mean(dh_pred)
-    , r2 = round(cor(dh_pred, dh_emp)^2,2)
-    , rmse = round(sqrt(mean((dh_pred - dh_emp)^2)),3)
-    , me = round(mean(dh_pred - dh_emp),3) # bias
+    growth = mean(dh_pred_agg)
+    , r2 = round(cor(dh_pred_agg, dh_emp)^2,2)
+    , rmse = round(sqrt(mean((dh_pred_agg - dh_emp)^2)),3)
+    , me = round(mean(dh_pred_agg - dh_emp),3) # bias
   )
   , mngt_type
 ]
@@ -622,6 +597,6 @@ gval_growthstrict <- ggplot(validation_berta_growthstrict, aes(x = dh_pred_agg, 
 gcombo = gval + gval_growthstrict
 
 ggsave(plot = gcombo, filename = "03_work/analysis/validation/gcombo_asyml_27_agg.png", width = 14, height = 7)
-ggsave(plot = gcombo, filename = "03_work/analysis/validation/gcombo_student14_agg.png", width = 14, height = 7) 
+#ggsave(plot = gcombo, filename = "03_work/analysis/validation/gcombo_student14_agg.png", width = 14, height = 7) 
 
 
