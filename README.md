@@ -5,9 +5,9 @@ Analysis of recovery of forest height post disturbance in Bavaria
 # Understanding the managament impact on forest height recovery dynamics in Central Europe 
 This repository holds code for running the analysis that integrates a biologically grounded theoretical model of forest growth with remotely sensed canopy height data and a forest disturbance map to better understand post-disturbance forest canopy recovery. For a detailed description of the purpose, methodology, and results, see the following paper:
 
-Krüger, K., Fischer, F.J., Stritih, A., Klemmt. H.J., Seidl, R. (2026). Managing the future: Post-disturbance forest recovery across management types in Central Europe. Submitted to Forest Ecology and Management.
+Krüger, K., Fischer, F.J., Stritih, A., Klemmt. H.J., Seidl, R. (2026). Managing the future: Post-disturbance forest recovery across management types in Central Europe. Submitted to Forest Ecology and Management (https://doi.org/10.1016/j.foreco.2026.123616).
 
-The data required to reproduce the analysis can be obtained via the following link: placeholder for the link
+The data required to reproduce the analysis can be obtained via the following link: https://zenodo.org/records/17804070
 
 Most data needed to reproduce the results can be obtained from public and open access sources, which are indicated in the readme per data folder in the data repository. All other layers can be generated with the code provided in this repository. The forest ownership map used to classify forest management types cannot be made available due to data usage agreements with the respective regional authority. For reproducibility, please request the respective layers from the regional authority, while we provide links to those that are openly accessible.
 
