@@ -9,7 +9,7 @@ Krüger, K., Fischer, F.J., Stritih, A., Klemmt. H.J., Seidl, R. (2026). Managin
 
 The data required to reproduce the analysis can be obtained via the following link: https://zenodo.org/records/17804070
 
-Most data needed to reproduce the results can be obtained from public and open access sources, which are indicated in the readme per data folder in the data repository. All other layers can be generated with the code provided in this repository. The forest ownership map used to classify forest management types cannot be made available due to data usage agreements with the respective regional authority. For reproducibility, please request the respective layers from the regional authority, while we provide links to those that are openly accessible.
+Most data needed to reproduce the results can be obtained from public and open access sources, which are indicated in the readme per data folder in the data repository. All other layers can be generated with the code provided in this repository. The forest ownership map used to classify forest management types cannot be made available due to data usage agreements with the respective regional authority. We provide the analysis datatable with the respective ownership category in the data repositoy, but without coordinates. For full reproducibility, please request the respective layers from the regional authority, while we provide links to those that are openly accessible.
 
 ## platforms
 
