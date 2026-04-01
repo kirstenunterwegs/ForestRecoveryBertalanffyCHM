@@ -52,13 +52,13 @@ setwd("~/data") # or how you name your directory
 
 years <- c("2017", "2018", "2019", "2020", "2021", "2022", "2023") # years for which CHM is available
 
-tile_paths <- c("/data/public/Projects/DANK/ForestRecovery/02_dataRaw/nDOM_lwf/nDOM_17_neu", # paths for server access to all CHMs
-                "/data/public/Projects/DANK/ForestRecovery/02_dataRaw/nDOM_lwf/nDOM_18",
-                "/data/public/Projects/DANK/ForestRecovery/02_dataRaw/nDOM_lwf/nDOM_19",
-                "/data/public/Projects/DANK/ForestRecovery/02_dataRaw/nDOM_lwf/nDOM_20",
-                "/data/public/Projects/DANK/ForestRecovery/02_dataRaw/nDOM_lwf/nDOM_21",
-                "/data/public/Projects/DANK/ForestRecovery/02_dataRaw/nDOM_lwf/nDOM_22",
-                "/data/public/Projects/DANK/ForestRecovery/02_dataRaw/nDOM_lwf/nDOM_23")
+tile_paths <- c("/02_dataRaw/nDOM_lwf/nDOM_17_neu", # paths for server access to all CHMs
+                "/02_dataRaw/nDOM_lwf/nDOM_18",
+                "/02_dataRaw/nDOM_lwf/nDOM_19",
+                "/02_dataRaw/nDOM_lwf/nDOM_20",
+                "/02_dataRaw/nDOM_lwf/nDOM_21",
+                "/02_dataRaw/nDOM_lwf/nDOM_22",
+                "/02_dataRaw/nDOM_lwf/nDOM_23")
 
 # extent extraction function 
 
